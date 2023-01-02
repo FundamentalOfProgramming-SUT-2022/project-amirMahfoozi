@@ -1,0 +1,8 @@
+# depslib dependency file v1.0
+1672665775 source:c:\users\15142\documents\github\project-amirmahfoozi\vim-project\main.c
+	<stdio.h>
+	<string.h>
+	<sys/types.h>
+	<sys/stat.h>
+	<unistd.h>
+
