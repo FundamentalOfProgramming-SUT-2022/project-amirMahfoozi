@@ -3,7 +3,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <errno.h>
 #define maxlength 1000
+
 char createfile[maxlength] = "createfile";
 void clear_string(char arr[])
 {
@@ -27,6 +29,10 @@ void create_file(char address[],int counter)
     for(int i = 0;i<path;i++)
     {
         pathchar[i] = address[i];
+        if(address[i+1] == '/')
+        {
+            mkdir(pathchar,0777);
+        }
     }
     mkdir(pathchar,0777);
     FILE *OutFile;
