@@ -10,8 +10,37 @@
 #define maxl 1000
 #define max_com 1000
 #define max_address 1000
+void cat(char address[],int n)
+{
+    char filename[max_address];
+    for(int i = 1;i<n;i++)
+    {
+        filename[i-1] = address[i];
+    }
+    filename[n-1] = '\0';
+    // filename = address - '/'
+    FILE* myfile;
+    if(fopen(filename,"r")) // check if file is created
+    {
+        myfile = fopen(filename,"r");
+        char line[200];
+        while(1)
+        {
+            line[0] = '\0';
+            if(fgets(line,200,myfile) == NULL) break;
+            printf("%s",line);
+        }
+        fclose(myfile);
+    }
+    else{
+        printf("This file doesn't exist !\n");
+        return;
+    }
+}
+
 void createfile(char address[],int n)
 {
+    // seperate the dir by '/'
     char temp[max_address];
     int index;
     for(int i = 1;i<n;i++)
@@ -24,15 +53,16 @@ void createfile(char address[],int n)
         }
         temp[i-1] = address[i];
     }
+
     char filename[max_address];
     for(int i = 1;i<n;i++)
     {
         filename[i-1] = address[i];
     }
     filename[n-1] = '\0';
-
+    // filename = address - '/'
     FILE* myfile;
-    if(fopen(filename,"r"))
+    if(fopen(filename,"r")) // check if file is created
     {
         fclose(myfile);
         printf("This file already exist !\n");
@@ -90,13 +120,47 @@ void get_input()
             }
         }
     }
-    else if(!strcmp(command,"cat"))
+    else if(!strcmp(command,"insertstr"))
     {
 
     }
-    else if(!strcmp(command,"remove"))
+    else if(!strcmp(command,"cat"))
     {
-
+        if(!strcmp(sub_command,"--file"))
+        {
+            found = 1;
+            char temp;
+            char address[max_address];
+            temp = getchar();//space
+            temp = getchar();// check if it is " or not
+            if(temp == '"')
+            {
+                temp = getchar();
+                int cnt = 0;
+                while(temp!='"')
+                {
+                    address[cnt] = temp;
+                    temp = getchar();
+                    cnt++;
+                }
+                address[cnt] = '\0';
+                cat(address,cnt);
+                return;
+            }
+            else
+            {
+                int cnt = 0;
+                while(temp!='\n')
+                {
+                    address[cnt] = temp;
+                    temp = getchar();
+                    cnt++;
+                }
+                address[cnt] = '\0';
+                cat(address,cnt);
+                return;
+            }
+        }
     }
     else if(!strcmp(command,"copy"))
     {
