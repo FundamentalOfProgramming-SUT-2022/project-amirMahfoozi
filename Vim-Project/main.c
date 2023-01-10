@@ -219,54 +219,8 @@ void removestr(char address[],int n)
         return;
     }
 }
-void insertstr(char address[],int n)
+void insertstr(char address[],int n,int l,int p,char str[])
 {
-    int l;// line of position
-    int p;// char of position
-    char str[max_com];
-    scanf("%s",str);
-    if(!strcmp(str,"--str"))
-    {
-        char strandpos[maxl];
-        char temp;
-        temp = getchar();//space
-        temp = getchar();
-        int cnt = 0;
-        while(temp != '\n')
-        {
-           strandpos[cnt] = temp;
-           temp = getchar();
-           cnt++;
-        }
-        strandpos[cnt] = '\0';
-        for(int i = 0;i<cnt-1;i++)
-        {
-            if(strandpos[i] == '-' && strandpos[i+1] == '-')
-            {
-                l = strandpos[i+6]-'0';
-                p = strandpos[i+8]-'0';
-                cnt = i-1;
-                break;
-            }
-        }
-        if(strandpos[0] == '"')
-        {
-            for(int i = 1;i<cnt-1;i++)
-            {
-                str[i-1] = strandpos[i];
-            }
-            str[cnt-2] = '\0';
-        }
-        else
-        {
-            for(int i = 0;i<cnt;i++)
-            {
-                str[i] = strandpos[i];
-            }
-            str[cnt] = '\0';
-        }
-
-
         char filename[max_address];
         for(int i = 1;i<n;i++)
         {
@@ -344,12 +298,6 @@ void insertstr(char address[],int n)
             printf("This file doesn't exist !\n");
             return;
         }
-    }
-    else
-    {
-        printf("invalid command!\n");
-        return;
-    }
 }
 void cat(char address[],int n)
 {
@@ -481,7 +429,52 @@ void get_input()
                     cnt++;
                 }
                 address[cnt] = '\0';
-                insertstr(address,cnt);
+                int l;// line of position
+                int p;// char of position
+                char str[max_com];
+                scanf("%s",str);
+                if(!strcmp(str,"--str"))
+                {
+                    char strandpos[maxl];
+                    char temp;
+                    temp = getchar();//space
+                    temp = getchar();
+                    int cnt = 0;
+                    while(temp != '\n')
+                    {
+                       strandpos[cnt] = temp;
+                       temp = getchar();
+                       cnt++;
+                    }
+                    strandpos[cnt] = '\0';
+                    for(int i = 0;i<cnt-1;i++)
+                    {
+                        if(strandpos[i] == '-' && strandpos[i+1] == '-')
+                        {
+                            l = strandpos[i+6]-'0';
+                            p = strandpos[i+8]-'0';
+                            cnt = i-1;
+                            break;
+                        }
+                    }
+                    if(strandpos[0] == '"')
+                    {
+                        for(int i = 1;i<cnt-1;i++)
+                        {
+                            str[i-1] = strandpos[i];
+                        }
+                        str[cnt-2] = '\0';
+                    }
+                    else
+                    {
+                        for(int i = 0;i<cnt;i++)
+                        {
+                            str[i] = strandpos[i];
+                        }
+                        str[cnt] = '\0';
+                    }
+                }
+                insertstr(address,cnt,l,p,str);
                 return;
             }
             else
@@ -494,7 +487,52 @@ void get_input()
                     cnt++;
                 }
                 address[cnt] = '\0';
-                insertstr(address,cnt);
+                int l;// line of position
+                int p;// char of position
+                char str[max_com];
+                scanf("%s",str);
+                if(!strcmp(str,"--str"))
+                {
+                    char strandpos[maxl];
+                    char temp;
+                    temp = getchar();//space
+                    temp = getchar();
+                    int cnt = 0;
+                    while(temp != '\n')
+                    {
+                       strandpos[cnt] = temp;
+                       temp = getchar();
+                       cnt++;
+                    }
+                    strandpos[cnt] = '\0';
+                    for(int i = 0;i<cnt-1;i++)
+                    {
+                        if(strandpos[i] == '-' && strandpos[i+1] == '-')
+                        {
+                            l = strandpos[i+6]-'0';
+                            p = strandpos[i+8]-'0';
+                            cnt = i-1;
+                            break;
+                        }
+                    }
+                    if(strandpos[0] == '"')
+                    {
+                        for(int i = 1;i<cnt-1;i++)
+                        {
+                            str[i-1] = strandpos[i];
+                        }
+                        str[cnt-2] = '\0';
+                    }
+                    else
+                    {
+                        for(int i = 0;i<cnt;i++)
+                        {
+                            str[i] = strandpos[i];
+                        }
+                        str[cnt] = '\0';
+                    }
+                }
+                insertstr(address,cnt,l,p,str);
                 return;
             }
         }
