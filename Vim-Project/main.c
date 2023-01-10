@@ -15,7 +15,7 @@ void removestr(char address[],int n)
 {
     int l;// line of position
     int p;// char of position
-    int size; // number of chars to be removed
+    int size = 0; // number of chars to be removed
     char flag; //backward or forward
     char pos[max_com];
     scanf("%s",pos);
@@ -34,7 +34,12 @@ void removestr(char address[],int n)
     if(!strcmp(pos,"-size"))
     {
         scanf("%s",pos);
-        size = pos[0]-'0';
+        int cntpow = 0;
+        for(int i = strlen(pos)-1;i>=0;i--)
+        {
+            size += (pos[i]-'0')*pow(10,cntpow);
+            cntpow++;
+        }
         scanf("%s",pos);
         flag = pos[1];
     }
@@ -52,74 +57,64 @@ void removestr(char address[],int n)
     FILE* myfile;
     if(fopen(filename,"r")) // check if file is created
     {
+        char wholetext[maxl*200];
+        int countchar = 0;
+        long long posi = 0; // position of the first char to be removed
         myfile = fopen(filename,"r");
-        FILE* temporary = fopen("temporary.txt","w");
+        int number_of_line = 1;
         char line[200];
-        int num = 1; // number of lines passed : current line starting from 1
-        while(num < l)
+        while(1)
         {
             line[0] = '\0';
             if(fgets(line,200,myfile) == NULL) break;
-            fprintf(temporary,"%s",line);
-            num++;
+            int len = strlen(line);
+            if(number_of_line < l)
+                posi+=len;
+            number_of_line++;
+            for(int i = 0;i<len;i++)
+            {
+                wholetext[countchar] = line[i];
+                countchar++;
+            }
         }
-        int positionchar = 0;
-        line[0] = '\0';
-        fgets(line,200,myfile);
+        posi+=p;
+        FILE* temporary = fopen("temporary.txt","w");
         if(flag == 'b')
         {
-            while(positionchar < p-size)
+             for(int i = 0;i<countchar;i++)
             {
-                fputc(line[positionchar],temporary);
-                positionchar++;
-            }
-            while(size--)
-            {
-                positionchar++;
-            }
-            int len = strlen(line);
-            while(positionchar < len)
-            {
-                fputc(line[positionchar],temporary);
-                positionchar++;
+                if(i<posi && i>=posi-size-1)
+                {
+                    ;
+                }
+                else
+                    fprintf(temporary,"%c",wholetext[i]);
             }
         }
         else if(flag == 'f')
         {
-            while(positionchar < p)
+            for(int i = 0;i<countchar;i++)
             {
-                fputc(line[positionchar],temporary);
-                positionchar++;
+                if(i>=posi && i<=posi+size)
+                {
+                    ;
+                }
+                else
+                    fprintf(temporary,"%c",wholetext[i]);
             }
-            while(size--)
-            {
-                positionchar++;
-            }
-            int len = strlen(line);
-            while(positionchar < len)
-            {
-                fputc(line[positionchar],temporary);
-                positionchar++;
-            }
-        }
-        while(1)
-        {
-            line[0] = '\0';
-            if(fgets(line,200,myfile) == NULL) break;
-            fprintf(temporary,"%s",line);
         }
         fclose(myfile);
         fclose(temporary);
         temporary = fopen("temporary.txt","r");
-        myfile = fopen(filename,"w");
-        while(1)
-        {
-            line[0] = '\0';
-            if(fgets(line,200,temporary) == NULL) break;
-            fprintf(myfile,"%s",line);
-        }
-        fclose(myfile);
-        fclose(temporary);
+            myfile = fopen(filename,"w");
+            while(1)
+            {
+                line[0] = '\0';
+                if(fgets(line,200,temporary) == NULL) break;
+                fprintf(myfile,"%s",line);
+            }
+            fclose(myfile);
+            fclose(temporary);
     }
     else
     {
