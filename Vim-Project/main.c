@@ -2,6 +2,7 @@
 // id : 401106469
 
 #include <stdio.h>
+#include <math.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -56,6 +57,8 @@ void insertstr(char address[],int n)
             }
             str[cnt] = '\0';
         }
+
+
         char filename[max_address];
         for(int i = 1;i<n;i++)
         {
@@ -87,7 +90,24 @@ void insertstr(char address[],int n)
                 fputc(line[positionchar],temporary);
                 positionchar++;
             }
-            fprintf(temporary,"%s",str);
+            int tool = strlen(str);
+            for(int j = 0;j<tool;j++)//handeling \\n and \n
+            {
+                if(str[j] == '\\' && str[abs(j-1)] != '\\' && str[(j+1)] == 'n')
+                {
+                    fprintf(temporary,"%c",'\n');
+                    j++;
+                }
+                else if(str[j] == '\\' && str[abs(j-1)] == '\\' && str[(j+1)] == 'n')
+                {
+                    ;
+                }
+                else{
+                    fprintf(temporary,"%c",str[j]);
+                }
+
+            }
+
             while(positionchar < len)
             {
                 fputc(line[positionchar],temporary);
@@ -236,7 +256,7 @@ void get_input()
     else if(!strcmp(command,"insertstr"))
     {
          if(!strcmp(sub_command,"--file"))
-        {
+            {
             found = 1;
             char temp;
             char address[max_address];
@@ -259,7 +279,7 @@ void get_input()
             else
             {
                 int cnt = 0;
-                while(temp!='\n')
+                while(temp!=' ')
                 {
                     address[cnt] = temp;
                     temp = getchar();
