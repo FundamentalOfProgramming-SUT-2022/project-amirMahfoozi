@@ -11,6 +11,103 @@
 #define maxl 1000
 #define max_com 1000
 #define max_address 1000
+void copystr(char address[],int n)
+{
+    int l;// line of position
+    int p;// char of position
+    int size = 0; // number of chars to be removed
+    char flag; //backward or forward
+    char pos[max_com];
+    scanf("%s",pos);
+    if(!strcmp(pos,"--pos"))
+    {
+        scanf("%s",pos);
+        l = pos[0] - '0';
+        p = pos[2] - '0';
+    }
+    else
+    {
+        printf("invalid command\n");
+        return;
+    }
+    scanf("%s",pos);
+    if(!strcmp(pos,"-size"))
+    {
+        scanf("%s",pos);
+        int cntpow = 0;
+        for(int i = strlen(pos)-1;i>=0;i--)
+        {
+            size += (pos[i]-'0')*pow(10,cntpow);
+            cntpow++;
+        }
+        scanf("%s",pos);
+        flag = pos[1];
+    }
+    else{
+        printf("invalid command\n");
+        return;
+    }
+    char filename[max_address];
+    for(int i = 1;i<n;i++)
+    {
+        filename[i-1] = address[i];
+    }
+    filename[n-1] = '\0';
+    // filename = address - '/'
+    FILE* myfile;
+    if(fopen(filename,"r")) // check if file is created
+    {
+        char wholetext[maxl*200];
+        int countchar = 0;
+        long long posi = 0; // position of the first char to be removed
+        myfile = fopen(filename,"r");
+        int number_of_line = 1;
+        char line[200];
+        while(1)
+        {
+            line[0] = '\0';
+            if(fgets(line,200,myfile) == NULL) break;
+            int len = strlen(line);
+            if(number_of_line < l)
+                posi+=len;
+            number_of_line++;
+            for(int i = 0;i<len;i++)
+            {
+                wholetext[countchar] = line[i];
+                countchar++;
+            }
+        }
+        posi+=p;
+        FILE* clipboard = fopen("clipboard.txt","w");
+        if(flag == 'b')
+        {
+             for(int i = 0;i<countchar;i++)
+            {
+                if(i<posi && i>=posi-size-1)
+                {
+                     fprintf(clipboard,"%c",wholetext[i]);
+                }
+            }
+        }
+        else if(flag == 'f')
+        {
+            for(int i = 0;i<countchar;i++)
+            {
+                if(i>=posi && i<=posi+size)
+                {
+                    fprintf(clipboard,"%c",wholetext[i]);
+                }
+            }
+        }
+        fclose(myfile);
+        fclose(clipboard);
+    }
+    else
+    {
+        printf("This file doesn't exist !\n");
+        return;
+    }
+}
 void removestr(char address[],int n)
 {
     int l;// line of position
@@ -478,9 +575,43 @@ void get_input()
             }
         }
     }
-    else if(!strcmp(command,"cut"))
+    else if(!strcmp(command,"copystr"))
     {
-
+        if(!strcmp(sub_command,"--file"))
+            {
+            found = 1;
+            char temp;
+            char address[max_address];
+            temp = getchar();//space
+            temp = getchar();// check if it is " or not
+            if(temp == '"')
+            {
+                temp = getchar();
+                int cnt = 0;
+                while(temp!='"')
+                {
+                    address[cnt] = temp;
+                    temp = getchar();
+                    cnt++;
+                }
+                address[cnt] = '\0';
+                copystr(address,cnt);
+                return;
+            }
+            else
+            {
+                int cnt = 0;
+                while(temp!=' ')
+                {
+                    address[cnt] = temp;
+                    temp = getchar();
+                    cnt++;
+                }
+                address[cnt] = '\0';
+                copystr(address,cnt);
+                return;
+            }
+        }
     }
     else if(!strcmp(command,"paste"))
     {
