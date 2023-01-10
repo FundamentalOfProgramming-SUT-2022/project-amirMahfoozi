@@ -10,6 +10,119 @@
 #define maxl 1000
 #define max_com 1000
 #define max_address 1000
+void insertstr(char address[],int n)
+{
+    int l;// line of position
+    int p;// char of position
+    char str[max_com];
+    scanf("%s",str);
+    if(!strcmp(str,"--str"))
+    {
+        char strandpos[maxl];
+        char temp;
+        temp = getchar();//space
+        temp = getchar();
+        int cnt = 0;
+        while(temp != '\n')
+        {
+           strandpos[cnt] = temp;
+           temp = getchar();
+           cnt++;
+        }
+        strandpos[cnt] = '\0';
+        for(int i = 0;i<cnt-1;i++)
+        {
+            if(strandpos[i] == '-' && strandpos[i+1] == '-')
+            {
+                l = strandpos[i+6]-'0';
+                p = strandpos[i+8]-'0';
+                cnt = i-1;
+                break;
+            }
+        }
+        if(strandpos[0] == '"')
+        {
+            for(int i = 1;i<cnt-1;i++)
+            {
+                str[i-1] = strandpos[i];
+            }
+            str[cnt-2] = '\0';
+        }
+        else
+        {
+            for(int i = 0;i<cnt;i++)
+            {
+                str[i] = strandpos[i];
+            }
+            str[cnt] = '\0';
+        }
+        char filename[max_address];
+        for(int i = 1;i<n;i++)
+        {
+            filename[i-1] = address[i];
+        }
+        // finish getting input
+        filename[n-1] = '\0';
+        // filename = address - '/'
+        FILE* myfile;
+        if(fopen(filename,"r")) // check if file is created
+        {
+            myfile = fopen(filename,"r");
+            FILE* temporary = fopen("temporary.txt","w");
+            char line[200];
+            int num = 1; // number of lines passed : current line starting from 1
+            while(num < l)
+            {
+                line[0] = '\0';
+                if(fgets(line,200,myfile) == NULL) break;
+                fprintf(temporary,"%s",line);
+                num++;
+            }
+            int positionchar = 0;
+            line[0] = '\0';
+            fgets(line,200,myfile);
+            int len = strlen(line);
+            while(positionchar < p)
+            {
+                fputc(line[positionchar],temporary);
+                positionchar++;
+            }
+            fprintf(temporary,"%s",str);
+            while(positionchar < len)
+            {
+                fputc(line[positionchar],temporary);
+                positionchar++;
+            }
+            while(1)
+            {
+                line[0] = '\0';
+                if(fgets(line,200,myfile) == NULL) break;
+                fprintf(temporary,"%s",line);
+            }
+            fclose(myfile);
+            fclose(temporary);
+            temporary = fopen("temporary.txt","r");
+            myfile = fopen(filename,"w");
+            while(1)
+            {
+                line[0] = '\0';
+                if(fgets(line,200,temporary) == NULL) break;
+                fprintf(myfile,"%s",line);
+            }
+            fclose(myfile);
+            fclose(temporary);
+        }
+        else{
+            printf("This file doesn't exist !\n");
+            return;
+        }
+    }
+    else
+    {
+        printf("invalid command!\n");
+        return;
+    }
+}
 void cat(char address[],int n)
 {
     char filename[max_address];
@@ -122,7 +235,41 @@ void get_input()
     }
     else if(!strcmp(command,"insertstr"))
     {
-
+         if(!strcmp(sub_command,"--file"))
+        {
+            found = 1;
+            char temp;
+            char address[max_address];
+            temp = getchar();//space
+            temp = getchar();// check if it is " or not
+            if(temp == '"')
+            {
+                temp = getchar();
+                int cnt = 0;
+                while(temp!='"')
+                {
+                    address[cnt] = temp;
+                    temp = getchar();
+                    cnt++;
+                }
+                address[cnt] = '\0';
+                insertstr(address,cnt);
+                return;
+            }
+            else
+            {
+                int cnt = 0;
+                while(temp!='\n')
+                {
+                    address[cnt] = temp;
+                    temp = getchar();
+                    cnt++;
+                }
+                address[cnt] = '\0';
+                insertstr(address,cnt);
+                return;
+            }
+        }
     }
     else if(!strcmp(command,"cat"))
     {
