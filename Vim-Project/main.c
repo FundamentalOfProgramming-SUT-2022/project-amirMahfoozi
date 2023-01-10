@@ -11,6 +11,122 @@
 #define maxl 1000
 #define max_com 1000
 #define max_address 1000
+void removestr(char address[],int n)
+{
+    int l;// line of position
+    int p;// char of position
+    int size; // number of chars to be removed
+    char flag; //backward or forward
+    char pos[max_com];
+    scanf("%s",pos);
+    if(!strcmp(pos,"--pos"))
+    {
+        scanf("%s",pos);
+        l = pos[0] - '0';
+        p = pos[2] - '0';
+    }
+    else
+    {
+        printf("invalid command\n");
+        return;
+    }
+    scanf("%s",pos);
+    if(!strcmp(pos,"-size"))
+    {
+        scanf("%s",pos);
+        size = pos[0]-'0';
+        scanf("%s",pos);
+        flag = pos[1];
+    }
+    else{
+        printf("invalid command\n");
+        return;
+    }
+    char filename[max_address];
+    for(int i = 1;i<n;i++)
+    {
+        filename[i-1] = address[i];
+    }
+    filename[n-1] = '\0';
+    // filename = address - '/'
+    FILE* myfile;
+    if(fopen(filename,"r")) // check if file is created
+    {
+        myfile = fopen(filename,"r");
+        FILE* temporary = fopen("temporary.txt","w");
+        char line[200];
+        int num = 1; // number of lines passed : current line starting from 1
+        while(num < l)
+        {
+            line[0] = '\0';
+            if(fgets(line,200,myfile) == NULL) break;
+            fprintf(temporary,"%s",line);
+            num++;
+        }
+        int positionchar = 0;
+        line[0] = '\0';
+        fgets(line,200,myfile);
+        if(flag == 'b')
+        {
+            while(positionchar < p-size)
+            {
+                fputc(line[positionchar],temporary);
+                positionchar++;
+            }
+            while(size--)
+            {
+                positionchar++;
+            }
+            int len = strlen(line);
+            while(positionchar < len)
+            {
+                fputc(line[positionchar],temporary);
+                positionchar++;
+            }
+        }
+        else if(flag == 'f')
+        {
+            while(positionchar < p)
+            {
+                fputc(line[positionchar],temporary);
+                positionchar++;
+            }
+            while(size--)
+            {
+                positionchar++;
+            }
+            int len = strlen(line);
+            while(positionchar < len)
+            {
+                fputc(line[positionchar],temporary);
+                positionchar++;
+            }
+        }
+        while(1)
+        {
+            line[0] = '\0';
+            if(fgets(line,200,myfile) == NULL) break;
+            fprintf(temporary,"%s",line);
+        }
+        fclose(myfile);
+        fclose(temporary);
+        temporary = fopen("temporary.txt","r");
+        myfile = fopen(filename,"w");
+        while(1)
+        {
+            line[0] = '\0';
+            if(fgets(line,200,temporary) == NULL) break;
+            fprintf(myfile,"%s",line);
+        }
+        fclose(myfile);
+        fclose(temporary);
+    }
+    else
+    {
+        printf("This file doesn't exist !\n");
+        return;
+    }
+}
 void insertstr(char address[],int n)
 {
     int l;// line of position
@@ -329,9 +445,43 @@ void get_input()
             }
         }
     }
-    else if(!strcmp(command,"copy"))
+    else if(!strcmp(command,"removestr"))
     {
-
+        if(!strcmp(sub_command,"--file"))
+            {
+            found = 1;
+            char temp;
+            char address[max_address];
+            temp = getchar();//space
+            temp = getchar();// check if it is " or not
+            if(temp == '"')
+            {
+                temp = getchar();
+                int cnt = 0;
+                while(temp!='"')
+                {
+                    address[cnt] = temp;
+                    temp = getchar();
+                    cnt++;
+                }
+                address[cnt] = '\0';
+                removestr(address,cnt);
+                return;
+            }
+            else
+            {
+                int cnt = 0;
+                while(temp!=' ')
+                {
+                    address[cnt] = temp;
+                    temp = getchar();
+                    cnt++;
+                }
+                address[cnt] = '\0';
+                removestr(address,cnt);
+                return;
+            }
+        }
     }
     else if(!strcmp(command,"cut"))
     {
