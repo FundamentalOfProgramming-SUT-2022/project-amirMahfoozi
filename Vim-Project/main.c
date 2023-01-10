@@ -236,6 +236,26 @@ void insertstr(char address[],int n,int l,int p,char str[])
             return;
         }
 }
+void pastestr(char address[],int n,int l,int p)
+{
+    char text[maxl*200];
+    FILE* clipboard = fopen("clipboard.txt","r");
+    char line[200];
+    int number_of_chars = 0;
+    while(1)
+    {
+        line[0] = '\0';
+        if(fgets(line,200,clipboard) == NULL) break;
+        int len = strlen(line);
+        for(int i = 0;i<len;i++)
+        {
+            text[number_of_chars] = line[i];
+            number_of_chars++;
+        }
+    }
+    fclose(clipboard);
+    insertstr(address,n,l,p,text);
+}
 void cat(char address[],int n)
 {
     char filename[max_address];
@@ -830,9 +850,73 @@ void get_input()
             }
         }
     }
-    else if(!strcmp(command,"find"))
+    else if(!strcmp(command,"pastestr"))
     {
-
+        if(!strcmp(sub_command,"--file"))
+        {
+            found = 1;
+            char temp;
+            char address[max_address];
+            temp = getchar();//space
+            temp = getchar();// check if it is " or not
+            if(temp == '"')
+            {
+                temp = getchar();
+                int cnt = 0;
+                while(temp!='"')
+                {
+                    address[cnt] = temp;
+                    temp = getchar();
+                    cnt++;
+                }
+                address[cnt] = '\0';
+                int l;
+                int p;
+                char pos[max_com];
+                scanf("%s",pos);
+                if(!strcmp(pos,"--pos"))
+                {
+                    scanf("%s",pos);
+                    l = pos[0] - '0';
+                    p = pos[2] - '0';
+                }
+                else
+                {
+                    printf("invalid command\n");
+                    return;
+                }
+                pastestr(address,cnt,l,p);
+                return;
+            }
+            else
+            {
+                int cnt = 0;
+                while(temp!='\n')
+                {
+                    address[cnt] = temp;
+                    temp = getchar();
+                    cnt++;
+                }
+                address[cnt] = '\0';
+                int l;
+                int p;
+                char pos[max_com];
+                scanf("%s",pos);
+                if(!strcmp(pos,"--pos"))
+                {
+                    scanf("%s",pos);
+                    l = pos[0] - '0';
+                    p = pos[2] - '0';
+                }
+                else
+                {
+                    printf("invalid command\n");
+                    return;
+                }
+                pastestr(address,cnt,l,p);
+                return;
+            }
+        }
     }
     else if(!strcmp(command,"replace"))
     {
