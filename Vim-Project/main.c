@@ -11,6 +11,16 @@
 #define maxl 1000
 #define max_com 1000
 #define max_address 1000
+
+void copystr(char address[],int n,int l,int p,int size,char flag);// address of the text file - size of address - line number - char pos - number of char to be copied - forward or backward
+void removestr(char address[],int n,int l,int p,int size,char flag); // address of the text file - size of address - line number - char pos - number of char to be removed - forward or backward
+void cutstr(char address[],int n,int l,int p,int size,char flag); // address of the text file - size of address - line number - char pos - number of char to be cutted - forward or backward
+void insertstr(char address[],int n,int l,int p,char str[]); // address of the text file - size of address - line number - char pos - string to be added
+void pastestr(char address[],int n,int l,int p);// address of the text file - size of address - line number - char pos
+void cat(char address[],int n); // address of the text file - size of it
+void createfile(char address[],int n); // address of the text file - size of it
+void get_input();
+
 void copystr(char address[],int n,int l,int p,int size,char flag)
 {
     char filename[max_address];
@@ -74,6 +84,7 @@ void copystr(char address[],int n,int l,int p,int size,char flag)
         return;
     }
 }
+
 void removestr(char address[],int n,int l,int p,int size,char flag)
 {
     char filename[max_address];
@@ -310,7 +321,6 @@ void createfile(char address[],int n)
     FILE* myfile;
     if(fopen(filename,"r")) // check if file is created
     {
-        fclose(myfile);
         printf("This file already exist !\n");
     }
     else
@@ -319,15 +329,21 @@ void createfile(char address[],int n)
         fclose(myfile);
     }
 }
+int findstr(char str[],char address[],char attribute,char second_attribute)
+{
+
+}
 void get_input()
 {
     // this function get the command and check if it is available
     // if command was available check the sub-command
     // if both were correct get the data and pass it to other functions
+
     char command[max_com],sub_command[max_com];
     scanf("%s",command);
     scanf("%s",sub_command);
     int found = 0;
+
     if(!strcmp(command,"createfile"))
     {
         if(!strcmp(sub_command,"--file"))
@@ -918,9 +934,200 @@ void get_input()
             }
         }
     }
-    else if(!strcmp(command,"replace"))
+    else if(!strcmp(command,"find"))
     {
+        if(!strcmp(sub_command,"--str"))
+        {
+            char str[maxl],file[maxl];
+            char attribute = '?',second_attribute = '?';
+            int index_str = 0,index_file = 0;
+            char temp;
+            temp = getchar(); // space
+            temp = getchar(); //first char to check if it is " or not
+            if(temp == '"')
+            {
+                temp = getchar();
+                while(1)
+                {
+                    str[index_str] = temp;
+                    index_str++;
+                    temp = getchar();
+                    if(temp == '"' && str[index_str-1] != '\\')
+                    {
+                        break;
+                    }
+                    if(temp == '"' && str[index_str-1] == '\\')
+                    {
+                        index_str--;
+                    }
+                }
+                str[index_str] = '\0';
+                //printf("%s",str);
+                temp = getchar(); //space
+            }
+            else
+            {
+                str[index_str] = temp;
+                index_str++;
+                temp = getchar();
+                while(1)
+                {
+                    str[index_str] = temp;
+                    index_str++;
+                    temp = getchar();
+                    if(temp == ' ')
+                    {
+                        break;
+                    }
+                    if(temp == '"' && str[index_str-1] == '\\')
+                    {
+                        index_str--;
+                    }
+                }
+                str[index_str] = '\0';
+               // printf("%s",str);
+            }
+            scanf("%s",sub_command);
+            if(!strcmp(sub_command,"--file"))
+            {
+                temp = getchar(); // space
+                temp = getchar();//first char to check if it is " or not for file address
+                if(temp == '"')
+                {
+                    temp = getchar();
+                    while(1)
+                    {
+                        file[index_file] = temp;
+                        index_file++;
+                        temp = getchar();
+                        if(temp == '"' && file[index_file-1] != '\\')
+                        {
+                            break;
+                        }
+                        if(temp == '"' && file[index_file-1] == '\\')
+                        {
+                            index_file--;
+                        }
+                    }
+                    file[index_file] = '\0';
+                    //printf("%s",file);
+                    temp = getchar(); //space or \n
+                    if(temp == '\n')
+                    {
+                        found = 1;
+                        attribute = 'n';//null attribute
+                        second_attribute = 'n';
+                        findstr(str,file,attribute,second_attribute);
+                    }
+                }
+                else{
+                    file[index_file] = temp;
+                    index_file++;
+                    temp = getchar();
+                    while(1)
+                    {
+                        file[index_file] = temp;
+                        index_file++;
+                        temp = getchar();
+                        if(temp == ' ')
+                        {
+                            break;
+                        }
+                        if(temp == '\n')
+                        {
+                            found = 1;
+                            attribute = 'n'; // null attribute
+                            second_attribute = 'n';
+                            findstr(str,file,attribute,second_attribute);
+                            break;
+                        }
+                        if(temp == '"' && file[index_file-1] == '\\')
+                        {
+                            index_file--;
+                        }
+                    }
+                    file[index_file] = '\0';
+                    //printf("%s",file);
+                }
+                if(attribute != 'n')
+                {
+                    scanf("%s",sub_command);
+                    if(!strcmp(sub_command,"-count"))
+                    {
+                        found = 1;
+                        attribute = 'c';
+                        temp = getchar();
+                        if(temp == '\n')
+                        {
+                            second_attribute = 'n';
+                        }
+                        else{
+                            scanf("%s",sub_command);
+                        }
+                    }
+                    else if(!strcmp(sub_command,"-at"))
+                    {
+                        found = 1;
+                        attribute = 't';
+                        temp = getchar();
+                        if(temp == '\n')
+                        {
+                            second_attribute = 'n';
+                        }
+                        else{
+                            scanf("%s",sub_command);
+                        }
+                    }
+                    else if(!strcmp(sub_command,"-byword"))
+                    {
+                        found = 1;
+                        attribute = 'b';
+                        temp = getchar();
+                        if(temp == '\n')
+                        {
+                            second_attribute = 'n';
+                        }
+                        else{
+                            scanf("%s",sub_command);
+                        }
+                    }
+                    else if(!strcmp(sub_command,"-all"))
+                    {
+                        found = 1;
+                        attribute = 'a';
+                        temp = getchar();
+                        if(temp == '\n')
+                        {
+                            second_attribute = 'n';
+                        }
+                        else{
+                            scanf("%s",sub_command);
+                        }
+                    }
+                    if(second_attribute != 'n')
+                    {
+                        if(!strcmp(sub_command,"-count"))
+                        {
+                            second_attribute = 'c';
+                        }
+                        if(!strcmp(sub_command,"-at"))
+                        {
+                            second_attribute = 't';
+                        }
+                        if(!strcmp(sub_command,"-byword"))
+                        {
+                            second_attribute = 'b';
+                        }
+                        if(!strcmp(sub_command,"-all"))
+                        {
+                            second_attribute = 'a';
+                        }
+                    }
+                    findstr(str,file,attribute,second_attribute);
+                }
+            }
 
+        }
     }
     else if(!strcmp(command,"grep"))
     {
