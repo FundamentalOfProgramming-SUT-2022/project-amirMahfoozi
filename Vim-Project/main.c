@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
+#include <dirent.h>
 #define maxl 1000
 #define max_com 1000
 #define max_address 1000
@@ -59,7 +60,7 @@ void copystr(char address[],int n,int l,int p,int size,char flag)
         {
              for(int i = 0;i<countchar;i++)
             {
-                if(i<posi && i>=posi-size-1)
+                if(i<posi && i>posi-size-1)
                 {
                      fprintf(clipboard,"%c",wholetext[i]);
                 }
@@ -69,7 +70,7 @@ void copystr(char address[],int n,int l,int p,int size,char flag)
         {
             for(int i = 0;i<countchar;i++)
             {
-                if(i>=posi && i<=posi+size)
+                if(i>=posi && i<posi+size)
                 {
                     fprintf(clipboard,"%c",wholetext[i]);
                 }
@@ -123,7 +124,7 @@ void removestr(char address[],int n,int l,int p,int size,char flag)
         {
              for(int i = 0;i<countchar;i++)
             {
-                if(i<posi && i>=posi-size-1)
+                if(i<posi && i>posi-size-1)
                 {
                     ;
                 }
@@ -135,7 +136,7 @@ void removestr(char address[],int n,int l,int p,int size,char flag)
         {
             for(int i = 0;i<countchar;i++)
             {
-                if(i>=posi && i<=posi+size)
+                if(i>=posi && i<posi+size)
                 {
                     ;
                 }
@@ -332,6 +333,56 @@ void createfile(char address[],int n)
 int findstr(char str[],char address[],char attribute,char second_attribute)
 {
 
+}
+int grep()
+{
+
+}
+void tree(char path[],int root,const int mainroot)
+{
+        DIR *directory;
+        struct dirent *entry;
+        directory = opendir(path);
+        if(directory == NULL)
+        {
+            printf("error opening file");
+            return 1;
+        }
+        while((entry = readdir(directory)) != NULL)
+        {
+            if(!strcmp((entry->d_name),"."))
+                continue;
+            if(!strcmp((entry->d_name),".."))
+                continue;
+
+            printf("├");
+            for(int i = 0;i<mainroot-root+1;i++)
+            {
+                printf("──");
+            }
+            if(entry->d_type == DT_DIR)
+                printf(" %s:\n",entry->d_name);
+            else
+                printf(" %s\n",entry->d_name);
+
+            if(entry->d_type == DT_DIR && root > 0)
+            {
+                char newpath[maxl];
+                int n = strlen(path);
+                for(int i = 0;i<n;i++)
+                {
+                    newpath[i] = path[i];
+                }
+                newpath[n] = '/';
+                for(int i = 0;i<strlen(entry->d_name);i++)
+                {
+                    newpath[i+n+1] = (entry->d_name)[i];
+                }
+                newpath[n+strlen(entry->d_name)+1] = '\0';
+                tree(newpath,root-1,mainroot);
+            }
+        }
+        closedir(directory);
 }
 void get_input()
 {
@@ -1129,9 +1180,22 @@ void get_input()
 
         }
     }
-    else if(!strcmp(command,"grep"))
+    else if(!strcmp(command,"tree"))
     {
-
+        found = 1;
+        int d;
+        if(sub_command[0] == '-')
+            d = -(sub_command[1] -'0');
+        else
+            d = sub_command[0]-'0';
+        if(d < -1)
+        {
+            printf("invalid depth\n");
+        }
+        else if (d == -1)
+            tree("root",100,100);
+        else
+            tree("root",d,d);
     }
     else if(!strcmp(command,"undo"))
     {
