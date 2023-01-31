@@ -13,17 +13,158 @@
 #define max_com 1000
 #define max_address 1000
 
-void copystr(char address[],int n,int l,int p,int size,char flag);// address of the text file - size of address - line number - char pos - number of char to be copied - forward or backward
-void removestr(char address[],int n,int l,int p,int size,char flag); // address of the text file - size of address - line number - char pos - number of char to be removed - forward or backward
-void cutstr(char address[],int n,int l,int p,int size,char flag); // address of the text file - size of address - line number - char pos - number of char to be cutted - forward or backward
-void insertstr(char address[],int n,int l,int p,char str[]); // address of the text file - size of address - line number - char pos - string to be added
-void pastestr(char address[],int n,int l,int p);// address of the text file - size of address - line number - char pos
-void cat(char address[],int n); // address of the text file - size of it
-void createfile(char address[],int n); // address of the text file - size of it
+void copystr(char address[],int l,int p,int size,char flag);// address of the text file  - line number - char pos - number of char to be copied - forward or backward
+void removestr(char address[],int l,int p,int size,char flag); // address of the text file  - line number - char pos - number of char to be removed - forward or backward
+void cutstr(char address[],int l,int p,int size,char flag); // address of the text file  - line number - char pos - number of char to be cutted - forward or backward
+void insertstr(char address[],int l,int p,char str[]); // address of the text file  - line number - char pos - string to be added
+void pastestr(char address[],int l,int p);// address of the text file  - line number - char pos
+void cat(char address[]); // address of the text file
+void createfile(char address[]); // address of the text file
 void get_input();
 
-void copystr(char address[],int n,int l,int p,int size,char flag)
+char* detect_dbl_rcc(char address[],int *l_ptr,int *p_ptr,int *size_ptr,char *flag_ptr)
 {
+    char temp;
+    temp = getchar();//space
+    temp = getchar();// check if it is " or not
+    if(temp == '"')
+    {
+        temp = getchar();
+        int cnt = 0;
+        while(temp!='"')
+        {
+            address[cnt] = temp;
+            temp = getchar();
+            cnt++;
+        }
+        address[cnt] = '\0';
+        int l;// line of position
+        int p;// char of position
+        int size = 0; // number of chars to be removed
+        char flag; //backward or forward
+        char pos[max_com];
+        scanf("%s",pos);
+        if(!strcmp(pos,"--pos"))
+        {
+            scanf("%s",pos);
+            l = pos[0] - '0';
+            p = pos[2] - '0';
+        }
+        else
+        {
+            printf("invalid command\n");
+            return;
+        }
+        scanf("%s",pos);
+        if(!strcmp(pos,"-size"))
+        {
+            scanf("%s",pos);
+            int cntpow = 0;
+            for(int i = strlen(pos)-1;i>=0;i--)
+            {
+                size += (pos[i]-'0')*pow(10,cntpow);
+                cntpow++;
+            }
+            scanf("%s",pos);
+            flag = pos[1];
+        }
+        else{
+            printf("invalid command\n");
+            return;
+        }
+        *l_ptr = l;
+        *p_ptr = p;
+        *size_ptr = size;
+        *flag_ptr = flag;
+        return address;
+    }
+    else
+    {
+        int cnt = 0;
+        while(temp!=' ')
+        {
+            address[cnt] = temp;
+            temp = getchar();
+            cnt++;
+        }
+        address[cnt] = '\0';
+        int l;// line of position
+        int p;// char of position
+        int size = 0; // number of chars to be removed
+        char flag; //backward or forward
+        char pos[max_com];
+        scanf("%s",pos);
+        if(!strcmp(pos,"--pos"))
+        {
+            scanf("%s",pos);
+            l = pos[0] - '0';
+            p = pos[2] - '0';
+        }
+        else
+        {
+            printf("invalid command\n");
+            return;
+        }
+        scanf("%s",pos);
+        if(!strcmp(pos,"-size"))
+        {
+            scanf("%s",pos);
+            int cntpow = 0;
+            for(int i = strlen(pos)-1;i>=0;i--)
+            {
+                size += (pos[i]-'0')*pow(10,cntpow);
+                cntpow++;
+            }
+            scanf("%s",pos);
+            flag = pos[1];
+        }
+        else{
+            printf("invalid command\n");
+            return;
+        }
+        *l_ptr = l;
+        *p_ptr = p;
+        *size_ptr = size;
+        *flag_ptr = flag;
+        return address;
+    }
+}
+
+char* detect_dbl(char address[])
+{
+    char temp;
+    temp = getchar();//space
+    temp = getchar();// check if it is " or not
+    if(temp == '"')
+    {
+        temp = getchar();
+        int cnt = 0;
+        while(temp!='"')
+        {
+            address[cnt] = temp;
+            temp = getchar();
+            cnt++;
+        }
+        address[cnt] = '\0';
+        return address;
+    }
+    else
+    {
+        int cnt = 0;
+        while(temp!='\n')
+        {
+            address[cnt] = temp;
+            temp = getchar();
+            cnt++;
+        }
+        address[cnt] = '\0';
+        return address;
+    }
+}
+
+void copystr(char address[],int l,int p,int size,char flag)
+{
+    int n = strlen(address);
     char filename[max_address];
     for(int i = 1;i<n;i++)
     {
@@ -86,8 +227,9 @@ void copystr(char address[],int n,int l,int p,int size,char flag)
     }
 }
 
-void removestr(char address[],int n,int l,int p,int size,char flag)
+void removestr(char address[],int l,int p,int size,char flag)
 {
+    int n = strlen(address);
     char filename[max_address];
     for(int i = 1;i<n;i++)
     {
@@ -163,13 +305,14 @@ void removestr(char address[],int n,int l,int p,int size,char flag)
         return;
     }
 }
-void cutstr(char address[],int n,int l,int p,int size,char flag)
+void cutstr(char address[],int l,int p,int size,char flag)
 {
-    copystr(address,n,l,p,size,flag);
-    removestr(address,n,l,p,size,flag);
+    copystr(address,l,p,size,flag);
+    removestr(address,l,p,size,flag);
 }
-void insertstr(char address[],int n,int l,int p,char str[])
+void insertstr(char address[],int l,int p,char str[])
 {
+        int n = strlen(address);
         char filename[max_address];
         for(int i = 1;i<n;i++)
         {
@@ -248,8 +391,9 @@ void insertstr(char address[],int n,int l,int p,char str[])
             return;
         }
 }
-void pastestr(char address[],int n,int l,int p)
+void pastestr(char address[],int l,int p)
 {
+    int n = strlen(address);
     char text[maxl*200];
     FILE* clipboard = fopen("clipboard.txt","r");
     char line[200];
@@ -266,10 +410,11 @@ void pastestr(char address[],int n,int l,int p)
         }
     }
     fclose(clipboard);
-    insertstr(address,n,l,p,text);
+    insertstr(address,l,p,text);
 }
-void cat(char address[],int n)
+void cat(char address[])
 {
+    int n = strlen(address);
     char filename[max_address];
     for(int i = 1;i<n;i++)
     {
@@ -296,9 +441,10 @@ void cat(char address[],int n)
     }
 }
 
-void createfile(char address[],int n)
+void createfile(char address[])
 {
     // seperate the dir by '/'
+    int n = strlen(address);
     char temp[max_address];
     int index;
     for(int i = 1;i<n;i++)
@@ -400,37 +546,8 @@ void get_input()
         if(!strcmp(sub_command,"--file"))
         {
             found = 1;
-            char temp;
             char address[max_address];
-            temp = getchar();//space
-            temp = getchar();// check if it is " or not
-            if(temp == '"')
-            {
-                temp = getchar();
-                int cnt = 0;
-                while(temp!='"')
-                {
-                    address[cnt] = temp;
-                    temp = getchar();
-                    cnt++;
-                }
-                address[cnt] = '\0';
-                createfile(address,cnt);
-                return;
-            }
-            else
-            {
-                int cnt = 0;
-                while(temp!='\n')
-                {
-                    address[cnt] = temp;
-                    temp = getchar();
-                    cnt++;
-                }
-                address[cnt] = '\0';
-                createfile(address,cnt);
-                return;
-            }
+            createfile(detect_dbl(address));
         }
     }
     else if(!strcmp(command,"insertstr"))
@@ -498,7 +615,7 @@ void get_input()
                         str[cnt] = '\0';
                     }
                 }
-                insertstr(address,cnt,l,p,str);
+                insertstr(address,l,p,str);
                 return;
             }
             else
@@ -556,7 +673,7 @@ void get_input()
                         str[cnt] = '\0';
                     }
                 }
-                insertstr(address,cnt,l,p,str);
+                insertstr(address,l,p,str);
                 return;
             }
         }
@@ -566,355 +683,44 @@ void get_input()
         if(!strcmp(sub_command,"--file"))
         {
             found = 1;
-            char temp;
             char address[max_address];
-            temp = getchar();//space
-            temp = getchar();// check if it is " or not
-            if(temp == '"')
-            {
-                temp = getchar();
-                int cnt = 0;
-                while(temp!='"')
-                {
-                    address[cnt] = temp;
-                    temp = getchar();
-                    cnt++;
-                }
-                address[cnt] = '\0';
-                cat(address,cnt);
-                return;
-            }
-            else
-            {
-                int cnt = 0;
-                while(temp!='\n')
-                {
-                    address[cnt] = temp;
-                    temp = getchar();
-                    cnt++;
-                }
-                address[cnt] = '\0';
-                cat(address,cnt);
-                return;
-            }
+            cat(detect_dbl(address));
         }
     }
     else if(!strcmp(command,"removestr"))
     {
         if(!strcmp(sub_command,"--file"))
-            {
+        {
             found = 1;
-            char temp;
-            char address[max_address];
-            temp = getchar();//space
-            temp = getchar();// check if it is " or not
-            if(temp == '"')
-            {
-                temp = getchar();
-                int cnt = 0;
-                while(temp!='"')
-                {
-                    address[cnt] = temp;
-                    temp = getchar();
-                    cnt++;
-                }
-                address[cnt] = '\0';
-                int l;// line of position
-                int p;// char of position
-                int size = 0; // number of chars to be removed
-                char flag; //backward or forward
-                char pos[max_com];
-                scanf("%s",pos);
-                if(!strcmp(pos,"--pos"))
-                {
-                    scanf("%s",pos);
-                    l = pos[0] - '0';
-                    p = pos[2] - '0';
-                }
-                else
-                {
-                    printf("invalid command\n");
-                    return;
-                }
-                scanf("%s",pos);
-                if(!strcmp(pos,"-size"))
-                {
-                    scanf("%s",pos);
-                    int cntpow = 0;
-                    for(int i = strlen(pos)-1;i>=0;i--)
-                    {
-                        size += (pos[i]-'0')*pow(10,cntpow);
-                        cntpow++;
-                    }
-                    scanf("%s",pos);
-                    flag = pos[1];
-                }
-                else{
-                    printf("invalid command\n");
-                    return;
-                }
-                removestr(address,cnt,l,p,size,flag);
-                return;
-            }
-            else
-            {
-                int cnt = 0;
-                while(temp!=' ')
-                {
-                    address[cnt] = temp;
-                    temp = getchar();
-                    cnt++;
-                }
-                address[cnt] = '\0';
-                int l;// line of position
-                int p;// char of position
-                int size = 0; // number of chars to be removed
-                char flag; //backward or forward
-                char pos[max_com];
-                scanf("%s",pos);
-                if(!strcmp(pos,"--pos"))
-                {
-                    scanf("%s",pos);
-                    l = pos[0] - '0';
-                    p = pos[2] - '0';
-                }
-                else
-                {
-                    printf("invalid command\n");
-                    return;
-                }
-                scanf("%s",pos);
-                if(!strcmp(pos,"-size"))
-                {
-                    scanf("%s",pos);
-                    int cntpow = 0;
-                    for(int i = strlen(pos)-1;i>=0;i--)
-                    {
-                        size += (pos[i]-'0')*pow(10,cntpow);
-                        cntpow++;
-                    }
-                    scanf("%s",pos);
-                    flag = pos[1];
-                }
-                else{
-                    printf("invalid command\n");
-                    return;
-                }
-                removestr(address,cnt,l,p,size,flag);
-                return;
-            }
+            char address[maxl];
+            int l,p,size;
+            char flag;
+            char *newaddress = detect_dbl_rcc(address,&l,&p,&size,&flag);
+            removestr(newaddress,l,p,size,flag);
         }
     }
     else if(!strcmp(command,"copystr"))
     {
         if(!strcmp(sub_command,"--file"))
-            {
+        {
             found = 1;
-            char temp;
-            char address[max_address];
-            temp = getchar();//space
-            temp = getchar();// check if it is " or not
-            if(temp == '"')
-            {
-                temp = getchar();
-                int cnt = 0;
-                while(temp!='"')
-                {
-                    address[cnt] = temp;
-                    temp = getchar();
-                    cnt++;
-                }
-                address[cnt] = '\0';
-                int l;// line of position
-                int p;// char of position
-                int size = 0; // number of chars to be removed
-                char flag; //backward or forward
-                char pos[max_com];
-                scanf("%s",pos);
-                if(!strcmp(pos,"--pos"))
-                {
-                    scanf("%s",pos);
-                    l = pos[0] - '0';
-                    p = pos[2] - '0';
-                }
-                else
-                {
-                    printf("invalid command\n");
-                    return;
-                }
-                scanf("%s",pos);
-                if(!strcmp(pos,"-size"))
-                {
-                    scanf("%s",pos);
-                    int cntpow = 0;
-                    for(int i = strlen(pos)-1;i>=0;i--)
-                    {
-                        size += (pos[i]-'0')*pow(10,cntpow);
-                        cntpow++;
-                    }
-                    scanf("%s",pos);
-                    flag = pos[1];
-                }
-                else{
-                    printf("invalid command\n");
-                    return;
-                }
-                copystr(address,cnt,l,p,size,flag);
-                return;
-            }
-            else
-            {
-                int cnt = 0;
-                while(temp!=' ')
-                {
-                    address[cnt] = temp;
-                    temp = getchar();
-                    cnt++;
-                }
-                address[cnt] = '\0';
-                int l;// line of position
-                int p;// char of position
-                int size = 0; // number of chars to be removed
-                char flag; //backward or forward
-                char pos[max_com];
-                scanf("%s",pos);
-                if(!strcmp(pos,"--pos"))
-                {
-                    scanf("%s",pos);
-                    l = pos[0] - '0';
-                    p = pos[2] - '0';
-                }
-                else
-                {
-                    printf("invalid command\n");
-                    return;
-                }
-                scanf("%s",pos);
-                if(!strcmp(pos,"-size"))
-                {
-                    scanf("%s",pos);
-                    int cntpow = 0;
-                    for(int i = strlen(pos)-1;i>=0;i--)
-                    {
-                        size += (pos[i]-'0')*pow(10,cntpow);
-                        cntpow++;
-                    }
-                    scanf("%s",pos);
-                    flag = pos[1];
-                }
-                else{
-                    printf("invalid command\n");
-                    return;
-                }
-                copystr(address,cnt,l,p,size,flag);
-                return;
-            }
+            char address[maxl];
+            int l,p,size;
+            char flag;
+            char *newaddress = detect_dbl_rcc(address,&l,&p,&size,&flag);
+            copystr(newaddress,l,p,size,flag);
         }
     }
     else if(!strcmp(command,"cutstr"))
     {
-         if(!strcmp(sub_command,"--file"))
-            {
+        if(!strcmp(sub_command,"--file"))
+        {
             found = 1;
-            char temp;
-            char address[max_address];
-            temp = getchar();//space
-            temp = getchar();// check if it is " or not
-            if(temp == '"')
-            {
-                temp = getchar();
-                int cnt = 0;
-                while(temp!='"')
-                {
-                    address[cnt] = temp;
-                    temp = getchar();
-                    cnt++;
-                }
-                address[cnt] = '\0';
-                int l;// line of position
-                int p;// char of position
-                int size = 0; // number of chars to be removed
-                char flag; //backward or forward
-                char pos[max_com];
-                scanf("%s",pos);
-                if(!strcmp(pos,"--pos"))
-                {
-                    scanf("%s",pos);
-                    l = pos[0] - '0';
-                    p = pos[2] - '0';
-                }
-                else
-                {
-                    printf("invalid command\n");
-                    return;
-                }
-                scanf("%s",pos);
-                if(!strcmp(pos,"-size"))
-                {
-                    scanf("%s",pos);
-                    int cntpow = 0;
-                    for(int i = strlen(pos)-1;i>=0;i--)
-                    {
-                        size += (pos[i]-'0')*pow(10,cntpow);
-                        cntpow++;
-                    }
-                    scanf("%s",pos);
-                    flag = pos[1];
-                }
-                else{
-                    printf("invalid command\n");
-                    return;
-                }
-                cutstr(address,cnt,l,p,size,flag);
-                return;
-            }
-            else
-            {
-                int cnt = 0;
-                while(temp!=' ')
-                {
-                    address[cnt] = temp;
-                    temp = getchar();
-                    cnt++;
-                }
-                address[cnt] = '\0';
-                int l;// line of position
-                int p;// char of position
-                int size = 0; // number of chars to be removed
-                char flag; //backward or forward
-                char pos[max_com];
-                scanf("%s",pos);
-                if(!strcmp(pos,"--pos"))
-                {
-                    scanf("%s",pos);
-                    l = pos[0] - '0';
-                    p = pos[2] - '0';
-                }
-                else
-                {
-                    printf("invalid command\n");
-                    return;
-                }
-                scanf("%s",pos);
-                if(!strcmp(pos,"-size"))
-                {
-                    scanf("%s",pos);
-                    int cntpow = 0;
-                    for(int i = strlen(pos)-1;i>=0;i--)
-                    {
-                        size += (pos[i]-'0')*pow(10,cntpow);
-                        cntpow++;
-                    }
-                    scanf("%s",pos);
-                    flag = pos[1];
-                }
-                else{
-                    printf("invalid command\n");
-                    return;
-                }
-                cutstr(address,cnt,l,p,size,flag);
-                return;
-            }
+            char address[maxl];
+            int l,p,size;
+            char flag;
+            char *newaddress = detect_dbl_rcc(address,&l,&p,&size,&flag);
+            cutstr(newaddress,l,p,size,flag);
         }
     }
     else if(!strcmp(command,"pastestr"))
@@ -952,7 +758,7 @@ void get_input()
                     printf("invalid command\n");
                     return;
                 }
-                pastestr(address,cnt,l,p);
+                pastestr(address,l,p);
                 return;
             }
             else
@@ -980,7 +786,7 @@ void get_input()
                     printf("invalid command\n");
                     return;
                 }
-                pastestr(address,cnt,l,p);
+                pastestr(address,l,p);
                 return;
             }
         }
