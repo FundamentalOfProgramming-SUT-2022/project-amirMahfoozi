@@ -13,6 +13,8 @@
 #define max_com 1000
 #define max_address 1000
 
+int exited = 0;
+
 void copystr(char address[],int l,int p,int size,char flag);// address of the text file  - line number - char pos - number of char to be copied - forward or backward
 void removestr(char address[],int l,int p,int size,char flag); // address of the text file  - line number - char pos - number of char to be removed - forward or backward
 void cutstr(char address[],int l,int p,int size,char flag); // address of the text file  - line number - char pos - number of char to be cutted - forward or backward
@@ -21,6 +23,8 @@ void pastestr(char address[],int l,int p);// address of the text file  - line nu
 void cat(char address[]); // address of the text file
 void createfile(char address[]); // address of the text file
 void get_input();
+char* detect_dbl_rcc(char address[],int *l_ptr,int *p_ptr,int *size_ptr,char *flag_ptr);// to improve readablity for remove-cut-copy checks for the "
+char* detect_dbl(char address[]); // to improve readability for createfile-cat-undo checks for the "
 
 char* detect_dbl_rcc(char address[],int *l_ptr,int *p_ptr,int *size_ptr,char *flag_ptr)
 {
@@ -229,6 +233,7 @@ void copystr(char address[],int l,int p,int size,char flag)
 
 void removestr(char address[],int l,int p,int size,char flag)
 {
+    copy_for_undo(address);
     int n = strlen(address);
     char filename[max_address];
     for(int i = 1;i<n;i++)
@@ -307,18 +312,19 @@ void removestr(char address[],int l,int p,int size,char flag)
 }
 void cutstr(char address[],int l,int p,int size,char flag)
 {
+    copy_for_undo(address);
     copystr(address,l,p,size,flag);
     removestr(address,l,p,size,flag);
 }
 void insertstr(char address[],int l,int p,char str[])
 {
+    copy_for_undo(address);
         int n = strlen(address);
         char filename[max_address];
         for(int i = 1;i<n;i++)
         {
             filename[i-1] = address[i];
         }
-        // finish getting input
         filename[n-1] = '\0';
         // filename = address - '/'
         FILE* myfile;
@@ -393,6 +399,7 @@ void insertstr(char address[],int l,int p,char str[])
 }
 void pastestr(char address[],int l,int p)
 {
+    copy_for_undo(address);
     int n = strlen(address);
     char text[maxl*200];
     FILE* clipboard = fopen("clipboard.txt","r");
@@ -530,6 +537,78 @@ void tree(char path[],int root,const int mainroot)
         }
         closedir(directory);
 }
+
+void copy_for_undo(char address[])
+{
+    int n = strlen(address);
+    char filename[max_address];
+    for(int i = 1;i<n;i++)
+    {
+        filename[i-1] = address[i];
+    }
+    filename[n-1] = '\0';
+    // filename = address - '/'
+    FILE* myfile;
+    if(fopen(filename,"r")) // check if file is created
+    {
+        myfile = fopen(filename,"r");
+        filename[0] = 'u';
+        filename[1] = 'n';
+        filename[2] = 'd';
+        filename[3] = 'o';
+        FILE* undo = fopen(filename,"w");
+        char line[200];
+        while(1)
+        {
+            line[0] = '\0';
+            if(fgets(line,200,myfile) == NULL) break;
+            fprintf(undo,"%s",line);
+        }
+
+        fclose(myfile);
+        fclose(undo);
+    }
+    else{
+        printf("This file doesn't exist !\n");
+        return;
+    }
+}
+
+void undo(char address[])
+{
+    int n = strlen(address);
+    char filename[max_address];
+    for(int i = 1;i<n;i++)
+    {
+        filename[i-1] = address[i];
+    }
+    filename[n-1] = '\0';
+    // filename = address - '/'
+    FILE* myfile;
+    if(fopen(filename,"w")) // check if file is created
+    {
+        myfile = fopen(filename,"w");
+        filename[0] = 'u';
+        filename[1] = 'n';
+        filename[2] = 'd';
+        filename[3] = 'o';
+        FILE* undo = fopen(filename,"r");
+        char line[200];
+        while(1)
+        {
+            line[0] = '\0';
+            if(fgets(line,200,undo) == NULL) break;
+            fprintf(myfile,"%s",line);
+        }
+
+        fclose(myfile);
+        fclose(undo);
+    }
+    else{
+        printf("This file doesn't exist !\n");
+        return;
+    }
+}
 void get_input()
 {
     // this function get the command and check if it is available
@@ -538,6 +617,11 @@ void get_input()
 
     char command[max_com],sub_command[max_com];
     scanf("%s",command);
+    if(!strcmp(command,"exit"))
+    {
+        exited = 1;
+        return;
+    }
     scanf("%s",sub_command);
     int found = 0;
 
@@ -1005,11 +1089,12 @@ void get_input()
     }
     else if(!strcmp(command,"undo"))
     {
-
-    }
-    else if(!strcmp(command,"exit"))
-    {
-        return 0;
+        if(!strcmp(sub_command,"--file"))
+        {
+            found = 1;
+            char address[max_address];
+            undo(detect_dbl(address));
+        }
     }
     if(!found)
     {
@@ -1020,7 +1105,7 @@ void get_input()
 
 int main()
 {
-    while(1)
+    while(!exited)
     {
         get_input();
     }
