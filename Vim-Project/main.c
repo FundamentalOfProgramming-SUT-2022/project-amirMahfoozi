@@ -537,7 +537,162 @@ void tree(char path[],int root,const int mainroot)
         }
         closedir(directory);
 }
+void auto_indent(char address[])
+{
+    int n = strlen(address);
+    char filename[max_address];
+    for(int i = 1;i<n;i++)
+    {
+        filename[i-1] = address[i];
+    }
+    filename[n-1] = '\0';
+    // filename = address - '/'
+    FILE* myfile;
+    if(fopen(filename,"r")) // check if file is created
+    {
+        myfile = fopen(filename,"r");
+        FILE* temporary = fopen("temporary.txt","w");
+        char line[200];
+        int depth = 0;
+        char before;
+        int haveword = 0;
+        while(1)
+        {
+            haveword = 0;
+            line[0] = '\0';
+            if(fgets(line,200,myfile) == NULL) break;
+            int n = strlen(line);
+            for(int i = 0;i<n;i++)
+            {
+                if(line[i] == '{')
+                    {
+                        if(line[i-1] != ' ')
+                        {
 
+                        }
+                        else{
+                            int tempi = i-1;
+                            while(line[tempi] == ' ')
+                                {
+                                    line[tempi] = 126;
+                                    tempi--;
+                                }
+
+                        }
+                    }
+            }
+            for(int i = 0;i<depth*4;i++)
+            {
+                fputc(' ',temporary);
+                before = ' ';
+            }
+            int last = 0;
+            for(int i = 0;i<n;i++)
+            {
+                if(line[i] != ' ')
+                {
+                    last = i;
+                    break;
+                }
+            }
+            for(int i = last;i<n;i++)
+            {
+                if(line[i] == '{')
+                {
+                    depth++;
+                    fputc(' ',temporary);
+                    fputc(line[i],temporary);
+                    if(line[i+1] != '\n')
+                    {
+                        fputc('\n',temporary);
+                        before = '\n';
+                        haveword = 0;
+                    }
+                    if(line[i+1] == '\n')
+                    {
+                        fputc('\n',temporary);
+                        before = '\n';
+                        haveword = 0;
+                        i++;
+                    }
+                    int temp = i+1;
+                    while(line[temp] != '}' && temp < n)
+                    {
+                        if(line[temp] != '}' && line[temp] != ' ' && line[temp] != '\n')
+                        {
+                            haveword = 1;
+                            break;
+                        }
+                        temp++;
+                    }
+                    if(haveword)
+                    {
+                        for(int j = 0;j<depth*4;j++)
+                        {
+                            fputc(' ',temporary);
+                            before = ' ';
+                        }
+                    }
+
+                    while(line[i+1] == ' ')
+                    {
+                        i++;
+                    }
+                }
+                else if(line[i] == '}')
+                {
+                    depth--;
+                    if(before != '\n' && haveword)
+                    {
+                        fputc('\n',temporary);
+                        before = '\n';
+                        haveword = 0;
+                    }
+                    for(int j = 0;j<depth*4;j++)
+                    {
+                        fputc(' ',temporary);
+                        before = ' ';
+                    }
+                    fputc(line[i],temporary);
+                    if(line[i+1] != '\n' && line[i+1] != '\0')
+                    {
+                        fputc('\n',temporary);
+                        before = '\n';
+                        haveword = 0;
+                    }
+                    while(line[i+1] == ' ')
+                    {
+                        i++;
+                    }
+                }
+                else if(line[i] != 126)
+                {
+                    if(line[i] != ' ')
+                        haveword = 1;
+                    fputc(line[i],temporary);
+                    before = line[i];
+                }
+            }
+        }
+
+        fclose(myfile);
+        fclose(temporary);
+        myfile = fopen(filename,"w");
+        temporary = fopen("temporary.txt","r");
+        while(1)
+        {
+            line[0] = '\0';
+            if(fgets(line,200,temporary) == NULL) break;
+            fprintf(myfile,"%s",line);
+        }
+        fclose(myfile);
+        fclose(temporary);
+    }
+    else{
+        printf("This file doesn't exist !\n");
+        return;
+    }
+}
 void copy_for_undo(char address[])
 {
     int n = strlen(address);
@@ -1094,6 +1249,15 @@ void get_input()
             found = 1;
             char address[max_address];
             undo(detect_dbl(address));
+        }
+    }
+    else if(!strcmp(command,"auto-indent"))
+    {
+        if(!strcmp(sub_command,"--file"))
+        {
+            found = 1;
+            char address[max_address];
+            auto_indent(detect_dbl(address));
         }
     }
     if(!found)
