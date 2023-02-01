@@ -754,6 +754,73 @@ void auto_indent(char address[])
         return;
     }
 }
+
+void compare(char address[],char address2[])
+{
+    int n = strlen(address);
+    int n2 = strlen(address2);
+    char filename[max_address];
+    char filename2[max_address];
+    for(int i = 1;i<n;i++)
+    {
+        filename[i-1] = address[i];
+    }
+    for(int i = 1;i<n2;i++)
+    {
+        filename2[i-1] = address2[i];
+    }
+    filename[n-1] = '\0';
+    filename2[n2-1] = '\0';
+    // filename = address - '/'
+    FILE* myfile;
+    FILE* myfile2;
+    if(fopen(filename,"r") && fopen(filename2,"r")) // check if file is created
+    {
+        int cnt = 0,cnt2 = 0;
+        int f1_ended = 0;
+        int f2_ended = 0;
+        myfile = fopen(filename,"r");
+        myfile2 = fopen(filename2,"r");
+        char line[200];
+        char line2[200];
+        while(1)
+        {
+            line[0] = '\0';
+            line2[0] = '\0';
+            if(fgets(line,200,myfile) == NULL)
+            {
+                f1_ended = 1;
+                break;
+            }
+            if(fgets(line2,200,myfile2) == NULL)
+            {
+                f2_ended = 1;
+                break;
+            }
+            if(line[strlen(line) - 1] != '\n')
+            {
+                strcat(line, "\n");
+            }
+            if(line2[strlen(line2) - 1] != '\n')
+            {
+                strcat(line2, "\n");
+            }
+            cnt++;
+            cnt2++;
+            if(strcmp(line,line2))
+            {
+                     printf("============ %d ============\n%s%s", cnt, line, line2);
+            }
+        }
+        fclose(myfile);
+        fclose(myfile2);
+    }
+    else{
+        printf("This file doesn't exist !\n");
+        return;
+    }
+}
+
 void copy_for_undo(char address[])
 {
     int n = strlen(address);
@@ -1378,7 +1445,7 @@ void get_input()
                temp = getchar();//space
                while(1)
                {
-                   temp = getchar();
+                temp = getchar();
                if(temp == '"')
                {
                    temp = getchar();
@@ -1413,6 +1480,67 @@ void get_input()
            {
                printf("%d\n",sum);
            }
+        }
+    }
+    else if(!strcmp(command,"compare"))
+    {
+        if(!strcmp(sub_command,"--files"))
+        {
+            found = 1;
+            int index = 0;
+            char address1[max_address];
+            char address2[max_address];
+            char temp;
+            temp = getchar();//space
+            temp = getchar();
+           if(temp == '"')
+           {
+               temp = getchar();
+               while(temp != '"')
+               {
+                   address1[index] = temp;
+                   index++;
+                   temp = getchar();
+               }
+               address1[index] = '\0';
+               temp = getchar();
+           }
+           else
+           {
+               while(temp != ' ' && temp !=  '\n')
+               {
+                   address1[index] = temp;
+                   index++;
+                   temp = getchar();
+               }
+               address1[index] = '\0';
+           }
+           index = 0;
+           temp = getchar();
+           if(temp == '"')
+           {
+               temp = getchar();
+               while(temp != '"')
+               {
+                   address2[index] = temp;
+                   index++;
+                   temp = getchar();
+               }
+               address2[index] = '\0';
+               temp = getchar();
+           }
+           else
+           {
+               while(temp != ' ' && temp !=  '\n')
+               {
+                   address2[index] = temp;
+                   index++;
+                   temp = getchar();
+               }
+               address2[index] = '\0';
+           }
+           //printf("%s   %s",address1,address2);
+           compare(address1,address2);
         }
     }
     if(!found)
