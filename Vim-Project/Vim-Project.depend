@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1675270681 source:c:\users\15142\documents\github\project-amirmahfoozi\vim-project\main.c
+1675273355 source:c:\users\15142\documents\github\project-amirmahfoozi\vim-project\main.c
 	<stdio.h>
 	<math.h>
 	<string.h>

@@ -771,9 +771,29 @@ void compare(char address[],char address2[])
     }
     filename[n-1] = '\0';
     filename2[n2-1] = '\0';
+    int cntlines = 0,cntlines2 = 0;
     // filename = address - '/'
     FILE* myfile;
     FILE* myfile2;
+    char line11[200];
+    myfile = fopen(filename,"r");
+    myfile2 = fopen(filename2,"r");
+    while(1)
+    {
+        line11[0] = '\0';
+        if(fgets(line11,200,myfile) == NULL) break;
+        cntlines++;
+    }
+    fclose(myfile);
+    char line22[200];
+    while(1)
+    {
+        line22[0] = '\0';
+        if(fgets(line22,200,myfile2) == NULL) break;
+        cntlines2++;
+    }
+    fclose(myfile2);
+
     if(fopen(filename,"r") && fopen(filename2,"r")) // check if file is created
     {
         int cnt = 0,cnt2 = 0;
@@ -797,19 +817,58 @@ void compare(char address[],char address2[])
                 f2_ended = 1;
                 break;
             }
-            if(line[strlen(line) - 1] != '\n')
+            if(line[strlen(line)-1] != '\n')
             {
                 strcat(line, "\n");
             }
-            if(line2[strlen(line2) - 1] != '\n')
+            if(line2[strlen(line2)-1] != '\n')
             {
                 strcat(line2, "\n");
+            }
+            if(line[strlen(line)-2] == 13)
+            {
+                line[strlen(line)-2] = '\n';
+                line[strlen(line)-1] = '\0';
+            }
+            if(line2[strlen(line2)-2] == 13)
+            {
+                line2[strlen(line2)-2] = '\n';
+                line2[strlen(line2)-1] = '\0';
             }
             cnt++;
             cnt2++;
             if(strcmp(line,line2))
             {
-                     printf("============ %d ============\n%s%s", cnt, line, line2);
+                     printf("=========== %d ===========\n%s%s", cnt, line, line2);
+            }
+        }
+        if(f1_ended)
+        {
+            if(fgets(line2,200,myfile2) == NULL)
+            {
+                f2_ended = 1;
+            }
+        }
+        if(!f1_ended && f2_ended)
+        {
+            printf("<<<<<<<<<< %d - %d <<<<<<<<<<\n",cnt+1,cntlines);
+            printf("%s",line);
+            while(1)
+            {
+                line[0] = '\0';
+                if(fgets(line,200,myfile) == NULL) break;
+                printf("%s",line);
+            }
+        }
+        else if (f1_ended && !f2_ended)
+        {
+            printf(">>>>>>>>>> %d - %d >>>>>>>>>>\n",cnt2+1,cntlines2);
+            printf("%s",line2);
+            while(1)
+            {
+                line2[0] = '\0';
+                if(fgets(line2,200,myfile2) == NULL) break;
+                printf("%s",line2);
             }
         }
         fclose(myfile);
