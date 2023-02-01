@@ -26,6 +26,23 @@ void get_input();
 char* detect_dbl_rcc(char address[],int *l_ptr,int *p_ptr,int *size_ptr,char *flag_ptr);// to improve readablity for remove-cut-copy checks for the "
 char* detect_dbl(char address[]); // to improve readability for createfile-cat-undo checks for the "
 
+int searchline(char *s, char *srch)
+{
+
+    int n = strlen(srch);
+    char *str = malloc((n) * sizeof(char));
+    int cnt = 0;
+    for(int i = 0;i<n;i++)
+    {
+        strncpy(str, &s[i],n);
+        if (strcmp(srch, str) == 0)
+        {
+            cnt++;
+        }
+    }
+    return cnt;
+}
+
 char* detect_dbl_rcc(char address[],int *l_ptr,int *p_ptr,int *size_ptr,char *flag_ptr)
 {
     char temp;
@@ -487,9 +504,53 @@ int findstr(char str[],char address[],char attribute,char second_attribute)
 {
 
 }
-int grep()
+int grep(char mode,char str[],char address[])
 {
-
+    int n = strlen(address);
+    char filename[max_address];
+    for(int i = 1;i<n;i++)
+    {
+        filename[i-1] = address[i];
+    }
+    filename[n-1] = '\0';
+    // filename = address - '/'
+    FILE* myfile;
+    //printf("%s\n",str);
+    //printf("%s\n",address);
+    if(fopen(filename,"r")) // check if file is created
+    {
+        int fnd = 0;
+        int cntr = 0;
+        myfile = fopen(filename,"r");
+        char line[200];
+        while(1)
+        {
+            line[0] = '\0';
+            if(fgets(line,200,myfile) == NULL) break;
+            fnd = searchline(line,str);
+            if(fnd){
+                if(mode == 'n')
+                {
+                    printf("%s : %s\n",filename,line);
+                }
+                else if(mode == 'l')
+                {
+                    printf("%s\n",filename);
+                    break;
+                }
+                cntr++;
+            }
+        }
+        if(mode == 'c')
+        {
+            return cntr;
+        }
+        fclose(myfile);
+    }
+    else{
+        printf("This file doesn't exist !\n");
+        return;
+    }
 }
 void tree(char path[],int root,const int mainroot)
 {
@@ -1258,6 +1319,100 @@ void get_input()
             found = 1;
             char address[max_address];
             auto_indent(detect_dbl(address));
+        }
+    }
+    else if(!strcmp(command,"grep"))
+    {
+        int sum = 0; // for option c
+        char mode = 'n';
+        if(!strcmp(sub_command,"-c"))
+        {
+            mode = 'c';
+            scanf("%s",sub_command);
+        }
+        else if(!strcmp(sub_command,"-l"))
+        {
+            mode = 'l';
+            scanf("%s",sub_command);
+        }
+        if(!strcmp(sub_command,"--str"))
+        {
+            char str[maxl];
+            int index = 0;
+            found = 1;
+            char temp;
+            temp = getchar();//space
+            temp = getchar();//check if it is " or not
+            if(temp == '"')
+            {
+                temp = getchar();
+                while(temp!='"')
+                {
+                    str[index] = temp;
+                    index++;
+                    temp = getchar();
+                }
+                str[index] = '\0';
+                //printf("%s",str);
+            }
+            else
+            {
+                str[0] = temp;
+                index++;
+                temp = getchar();
+                while(temp!=' ')
+                {
+                    str[index] = temp;
+                    index++;
+                    temp = getchar();
+                }
+                str[index] = '\0';
+               // printf("%s",str);
+            }
+           scanf("%s",sub_command);
+           char address[maxl];
+           index = 0;
+           if(!strcmp(sub_command,"--files"))
+           {
+               char temp;
+               temp = getchar();//space
+               while(1)
+               {
+                   temp = getchar();
+               if(temp == '"')
+               {
+                   temp = getchar();
+                   while(temp != '"')
+                   {
+                       address[index] = temp;
+                       index++;
+                       temp = getchar();
+                   }
+                   address[index] = '\0';
+                   temp = getchar();
+               }
+               else
+               {
+                   while(temp != ' ' && temp !=  '\n')
+                   {
+                       address[index] = temp;
+                       index++;
+                       temp = getchar();
+                   }
+                   address[index] = '\0';
+               }
+               sum+=grep(mode,str,address);
+               index = 0;
+                    if(temp ==  '\n')
+                    {
+                        break;
+                    }
+               }
+           }
+           if(mode == 'c')
+           {
+               printf("%d\n",sum);
+           }
         }
     }
     if(!found)
