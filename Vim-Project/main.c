@@ -8,12 +8,15 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <dirent.h>
 #define maxl 1000
 #define max_com 1000
 #define max_address 1000
 
 int exited = 0;
+char arman_str[10000]={0};
+int arman_activate = 0;
 
 void copystr(char address[],int l,int p,int size,char flag);// address of the text file  - line number - char pos - number of char to be copied - forward or backward
 void removestr(char address[],int l,int p,int size,char flag); // address of the text file  - line number - char pos - number of char to be removed - forward or backward
@@ -25,7 +28,6 @@ void createfile(char address[]); // address of the text file
 void get_input();
 char* detect_dbl_rcc(char address[],int *l_ptr,int *p_ptr,int *size_ptr,char *flag_ptr);// to improve readablity for remove-cut-copy checks for the "
 char* detect_dbl(char address[]); // to improve readability for createfile-cat-undo checks for the "
-
 int searchline(char *s, char *srch)
 {
 
@@ -500,10 +502,6 @@ void createfile(char address[])
         fclose(myfile);
     }
 }
-int findstr(char str[],char address[],char attribute,char second_attribute)
-{
-
-}
 int grep(char mode,char str[],char address[])
 {
     int n = strlen(address);
@@ -570,14 +568,25 @@ void tree(char path[],int root,const int mainroot)
                 continue;
 
             printf("├");
+            strcat(arman_str,"├");
             for(int i = 0;i<mainroot-root+1;i++)
             {
                 printf("──");
             }
             if(entry->d_type == DT_DIR)
+            {
                 printf(" %s:\n",entry->d_name);
+                strcat(arman_str,entry->d_name);
+                strcat(arman_str,":\n");
+            }
+
             else
+            {
                 printf(" %s\n",entry->d_name);
+                strcat(arman_str,entry->d_name);
+                strcat(arman_str,"\n");
+            }
+
 
             if(entry->d_type == DT_DIR && root > 0)
             {
@@ -951,6 +960,224 @@ void undo(char address[])
         return;
     }
 }
+void arman_detector()
+{
+    char armantemp;
+        armantemp = getchar();
+        if(armantemp == ' ')
+        {
+            armantemp = getchar();
+            if(armantemp == '=')
+            {
+                armantemp = getchar();
+                if(armantemp == 'D')
+                {
+                    arman_activate = 1;
+                }
+            }
+        }
+}
+
+int is_match(char str[], char pattern[]) // can handle *a and a* and a*b
+{
+    int n = strlen(str);
+    int m = strlen(pattern);
+    //both empty is true (base case)
+    if (m == 0)
+        return (n == 0);
+    // we use dp method to find
+    int dp[n + 1][m + 1];
+    memset(dp, 0, sizeof(dp));
+    dp[0][0] = 1;// empty pattern and empty string
+
+    // Only '*' can match with empty string
+    for (int j = 1; j <= m; j++)
+    {
+        if (pattern[j - 1] == '*')
+            dp[0][j] = dp[0][j - 1];
+    }
+    for (int i = 1; i <= n; i++)
+    {
+        for (int j = 1; j <= m; j++)
+        {
+            // Two cases if we see a '*'
+            // ‘*’ indicates an empty sequence
+            // '*' character matches with ith character in input
+            if (pattern[j - 1] == '*')
+                dp[i][j] = dp[i][j - 1] || dp[i - 1][j];
+            //characters actually match
+            else if (str[i - 1] == pattern[j - 1])
+                dp[i][j] = dp[i - 1][j - 1];
+
+            // If characters don't match
+            else
+                dp[i][j] = 0;
+        }
+    }
+
+    return dp[n][m];
+}
+
+void find(char pattern[],char address[],int at_cnt,int at_at,int at_byword,int at_all)
+{
+
+    int n = strlen(address);
+    char filename[max_address];
+    for(int i = 1;i<n;i++)
+    {
+        filename[i-1] = address[i];
+    }
+    filename[n-1] = '\0';
+    // filename = address - '/'
+    FILE* myfile;
+    int untilnow = 0;
+    if(fopen(filename,"r")) // check if file is created
+    {
+
+        myfile = fopen(filename,"r");
+        char line[200];
+        int space[100],found[100],found_word[100];
+        int flag=0,index_find = 0,index_space = 0,chert = 0;
+        for (int i = 0; i < 100; i++)
+        {
+            space[i] = -1;
+            found[i] = -1;
+            found_word[i] = -1;
+        }
+        while(1)
+        {
+            int to_khat_peida_shod = 0;
+        if(fgets(line,200,myfile) == NULL)
+            break;
+        int len = strlen(line) - strlen(pattern);
+        int wild = 0;
+        if (pattern[0] == '*')
+        {
+            wild = 1;
+        }
+        for (int i = 1; i < len - 1; i++)
+        {
+            if (pattern[i] == '*' && pattern[i - 1] != '\\')
+            {
+                wild = 1;
+            }
+            if (pattern[i] == '*' && pattern[i - 1] == '\\') // \*
+            {
+                for (int j = i - 1; j < len; j++)
+                {
+                    pattern[j] = pattern[j + 1];
+                }
+                pattern[len - 1] = '\0';
+                pattern[len - 2] = '\0';
+                chert++;
+            }
+        }
+        for (int i = 0; i <= len ; i++)
+        {
+            char temp[200] = {};
+            strncpy(temp, line+i, strlen(pattern)-chert);
+
+            if (line[i] == ' ')
+            {
+                space[index_space] = i;
+                index_space++;
+                flag = 0;
+            }
+            if(wild)
+            {
+                if (is_match(temp,pattern))
+                {
+                    flag++;
+                    if (flag == 1)
+                    {
+                        to_khat_peida_shod = 1;
+                        found[index_find] = i+untilnow;
+                        index_find++;
+                    }
+                }
+            }
+            else
+            {
+                if (strcmp(pattern, temp) == 0)
+                {
+                    flag++;
+                    to_khat_peida_shod = 1;
+                    found[index_find] = i+untilnow;
+                    index_find++;
+                }
+            }
+        }
+        if(to_khat_peida_shod)
+        {
+            for (int i = 0; found[i] != -1; i++)
+            {
+                int word = 1;
+                for (int j = 0; space[j] != -1; j++)
+                {
+                    if (space[j] < found[i])
+                    {
+                        word = j + 2;
+                    }
+                }
+                found_word[i] = word;
+            }
+        }
+        untilnow+=strlen(line)-2;
+        }
+
+        if(!at_all && !at_at && !at_byword && !at_cnt) // no option
+        {
+            printf("%d\n", found[0]);
+        }
+         if(at_all && !at_at && !at_byword && !at_cnt) // all
+        {
+            for (int i = 0; found[i] != -1; i++)
+            {
+                printf("%d ", found[i]);
+            }
+            printf("\n");
+        }
+         if(!at_all && at_at && !at_byword && !at_cnt) // at
+        {
+            if(at_at-1 < 0)
+                printf("-1\n");
+            else
+                printf("%d\n", found[at_at-1]);
+        }
+         if(!at_all && !at_at && at_byword && !at_cnt) // byword
+        {
+            printf("%d\n", found_word[0]);
+        }
+         if(!at_all && !at_at && !at_byword && at_cnt) //count
+        {
+             printf("%d\n", index_find);
+        }
+         if(at_all && !at_at && at_byword && !at_cnt) // all and byword
+        {
+            for (int i = 0; found_word[i] != -1; i++)
+            {
+                printf("%d ", found_word[i]);
+            }
+            printf("\n");
+        }
+         if(!at_all && at_at && at_byword && !at_cnt) //at and byword
+        {
+             if(at_at-1 < 0)
+                printf("-1\n");
+            else
+                printf("%d\n", found_word[at_at-1]);
+        }
+        else{
+            printf("non valid combination");
+        }
+        fclose(myfile);
+    }
+    else{
+        printf("This file doesn't exist !\n");
+        return;
+    }
+}
+
 void get_input()
 {
     // this function get the command and check if it is available
@@ -1222,7 +1449,6 @@ void get_input()
         if(!strcmp(sub_command,"--str"))
         {
             char str[maxl],file[maxl];
-            char attribute = '?',second_attribute = '?';
             int index_str = 0,index_file = 0;
             char temp;
             temp = getchar(); // space
@@ -1273,6 +1499,7 @@ void get_input()
             scanf("%s",sub_command);
             if(!strcmp(sub_command,"--file"))
             {
+                found = 1;
                 temp = getchar(); // space
                 temp = getchar();//first char to check if it is " or not for file address
                 if(temp == '"')
@@ -1294,14 +1521,6 @@ void get_input()
                     }
                     file[index_file] = '\0';
                     //printf("%s",file);
-                    temp = getchar(); //space or \n
-                    if(temp == '\n')
-                    {
-                        found = 1;
-                        attribute = 'n';//null attribute
-                        second_attribute = 'n';
-                        findstr(str,file,attribute,second_attribute);
-                    }
                 }
                 else{
                     file[index_file] = temp;
@@ -1319,9 +1538,6 @@ void get_input()
                         if(temp == '\n')
                         {
                             found = 1;
-                            attribute = 'n'; // null attribute
-                            second_attribute = 'n';
-                            findstr(str,file,attribute,second_attribute);
                             break;
                         }
                         if(temp == '"' && file[index_file-1] == '\\')
@@ -1332,82 +1548,37 @@ void get_input()
                     file[index_file] = '\0';
                     //printf("%s",file);
                 }
-                if(attribute != 'n')
-                {
-                    scanf("%s",sub_command);
-                    if(!strcmp(sub_command,"-count"))
-                    {
-                        found = 1;
-                        attribute = 'c';
-                        temp = getchar();
-                        if(temp == '\n')
-                        {
-                            second_attribute = 'n';
-                        }
-                        else{
-                            scanf("%s",sub_command);
-                        }
-                    }
-                    else if(!strcmp(sub_command,"-at"))
-                    {
-                        found = 1;
-                        attribute = 't';
-                        temp = getchar();
-                        if(temp == '\n')
-                        {
-                            second_attribute = 'n';
-                        }
-                        else{
-                            scanf("%s",sub_command);
-                        }
-                    }
-                    else if(!strcmp(sub_command,"-byword"))
-                    {
-                        found = 1;
-                        attribute = 'b';
-                        temp = getchar();
-                        if(temp == '\n')
-                        {
-                            second_attribute = 'n';
-                        }
-                        else{
-                            scanf("%s",sub_command);
-                        }
-                    }
-                    else if(!strcmp(sub_command,"-all"))
-                    {
-                        found = 1;
-                        attribute = 'a';
-                        temp = getchar();
-                        if(temp == '\n')
-                        {
-                            second_attribute = 'n';
-                        }
-                        else{
-                            scanf("%s",sub_command);
-                        }
-                    }
-                    if(second_attribute != 'n')
-                    {
-                        if(!strcmp(sub_command,"-count"))
-                        {
-                            second_attribute = 'c';
-                        }
-                        if(!strcmp(sub_command,"-at"))
-                        {
-                            second_attribute = 't';
-                        }
-                        if(!strcmp(sub_command,"-byword"))
-                        {
-                            second_attribute = 'b';
-                        }
-                        if(!strcmp(sub_command,"-all"))
-                        {
-                            second_attribute = 'a';
-                        }
-                    }
-                    findstr(str,file,attribute,second_attribute);
-                }
+                char s[maxl];
+                scanf("%[^\n]%*c",s);
+                char *token;
+                const char c[2] = " ";
+                token = strtok(s,c);
+                int at_count = 0,at_at = 0,at_byword = 0,at_all = 0;
+                while( token != NULL ) {
+                  if(!strcmp(token,"-count"))
+                  {
+                      at_count = 1;
+                  }
+                  else if(!strcmp(token,"-at"))
+                  {
+                      at_at = 1;
+                  }
+                  else if(!strcmp(token,"-byword"))
+                  {
+                      at_byword = 1;
+                  }
+                  else if(!strcmp(token,"-all"))
+                  {
+                      at_all = 1;
+                  }
+                  else
+                  {
+                      at_at = atoi(token);
+                  }
+                  token = strtok(NULL, c);
+               }
+               // printf("%s,%s,%d,%d,%d,%d",str,file,at_count,at_at,at_byword,at_all);
+               find(str,file,at_count,at_at,at_byword,at_all);
             }
 
         }
@@ -1420,6 +1591,7 @@ void get_input()
             d = -(sub_command[1] -'0');
         else
             d = sub_command[0]-'0';
+        arman_detector();
         if(d < -1)
         {
             printf("invalid depth\n");
