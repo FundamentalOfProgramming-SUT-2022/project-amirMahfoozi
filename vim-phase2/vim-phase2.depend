@@ -1,0 +1,19 @@
+# depslib dependency file v1.0
+1386428076 source:c:\users\15142\documents\github\project-amirmahfoozi\vim-phase2\conio.c
+	<stdio.h>
+	<stdlib.h>
+	<windows.h>
+	<string.h>
+	"conio2.h"
+
+1675410174 c:\users\15142\documents\github\project-amirmahfoozi\vim-phase2\conio2.h
+	"conio2.h"
+	<windows.h>
+
+1675410153 source:c:\users\15142\documents\github\project-amirmahfoozi\vim-phase2\main.c
+	<stdio.h>
+	<stdlib.h>
+	"conio2.h"
+
+1659010317 c:\users\15142\documents\github\project-amirmahfoozi\vim-phase2\conio.h
+

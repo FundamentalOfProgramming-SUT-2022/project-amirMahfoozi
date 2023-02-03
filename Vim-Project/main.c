@@ -2,6 +2,7 @@
 // id : 401106469
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <string.h>
 #include <sys/types.h>
@@ -17,6 +18,8 @@
 int exited = 0;
 char arman_str[10000]={0};
 int arman_activate = 0;
+int to_be_replaced[maxl] = {-2};
+int index_to_be_replaced = 0;
 
 void copystr(char address[],int l,int p,int size,char flag);// address of the text file  - line number - char pos - number of char to be copied - forward or backward
 void removestr(char address[],int l,int p,int size,char flag); // address of the text file  - line number - char pos - number of char to be removed - forward or backward
@@ -28,6 +31,7 @@ void createfile(char address[]); // address of the text file
 void get_input();
 char* detect_dbl_rcc(char address[],int *l_ptr,int *p_ptr,int *size_ptr,char *flag_ptr);// to improve readablity for remove-cut-copy checks for the "
 char* detect_dbl(char address[]); // to improve readability for createfile-cat-undo checks for the "
+
 int searchline(char *s, char *srch)
 {
 
@@ -329,6 +333,58 @@ void removestr(char address[],int l,int p,int size,char flag)
         return;
     }
 }
+void remove_word(char address[],int index)
+{
+    printf("2");
+    copy_for_undo(address);
+    int n = strlen(address);
+    char filename[max_address];
+    for(int i = 1;i<n;i++)
+    {
+        filename[i-1] = address[i];
+    }
+    filename[n-1] = '\0';
+    // filename = address - '/'
+    FILE* myfile;
+    FILE* temporary;
+    if(fopen(filename,"r")) // check if file is created
+    {
+        myfile = fopen(filename,"r");
+        temporary = fopen("temporary.txt","w");
+        char ch;
+        int index_char = 0;
+        while(1)
+        {
+            if(index_char == index)
+            {
+                while(ch != ' ' && ch != '\n' && ch != EOF)
+                {
+                    ch = fgetc(myfile);
+                }
+            }
+            ch = fgetc(myfile);
+            if(ch != '\n')
+            {
+                index_char++;
+            }
+            fputc(ch,temporary);
+        }
+        fclose(myfile);
+        fclose(temporary);
+        myfile = fopen(filename,"w");
+        temporary = fopen("temporary.txt","r");
+        while(1)
+        {
+            ch = fgetc(temporary);
+            fputc(ch,myfile);
+        }
+    }
+    else
+    {
+        printf("This file doesn't exist !\n");
+        return;
+    }
+}
 void cutstr(char address[],int l,int p,int size,char flag)
 {
     copy_for_undo(address);
@@ -609,6 +665,7 @@ void tree(char path[],int root,const int mainroot)
 }
 void auto_indent(char address[])
 {
+    copy_for_undo(address);
     int n = strlen(address);
     char filename[max_address];
     for(int i = 1;i<n;i++)
@@ -1018,7 +1075,7 @@ int is_match(char str[], char pattern[]) // can handle *a and a* and a*b
     return dp[n][m];
 }
 
-void find(char pattern[],char address[],int at_cnt,int at_at,int at_byword,int at_all)
+int find(char pattern[],char address[],int at_cnt,int at_at,int at_byword,int at_all)
 {
 
     int n = strlen(address);
@@ -1124,35 +1181,50 @@ void find(char pattern[],char address[],int at_cnt,int at_at,int at_byword,int a
         }
         untilnow+=strlen(line)-2;
         }
-
+        fclose(myfile);
         if(!at_all && !at_at && !at_byword && !at_cnt) // no option
         {
             printf("%d\n", found[0]);
+            int ans = found[0];
+            return 0;
+
         }
-         if(at_all && !at_at && !at_byword && !at_cnt) // all
+        else if(at_all && !at_at && !at_byword && !at_cnt) // all
         {
+            int where = index_to_be_replaced;
             for (int i = 0; found[i] != -1; i++)
             {
                 printf("%d ", found[i]);
+                to_be_replaced[index_to_be_replaced] = found[i];
+                index_to_be_replaced++;
             }
             printf("\n");
+            return where;
         }
-         if(!at_all && at_at && !at_byword && !at_cnt) // at
+        else if(!at_all && at_at && !at_byword && !at_cnt) // at
         {
             if(at_at-1 < 0)
+            {
                 printf("-1\n");
+                return -1;
+            }
+
             else
+            {
                 printf("%d\n", found[at_at-1]);
+                return found[at_at-1];
+            }
+
         }
-         if(!at_all && !at_at && at_byword && !at_cnt) // byword
+         else if(!at_all && !at_at && at_byword && !at_cnt) // byword
         {
-            printf("%d\n", found_word[0]);
+            return found_word[0];
         }
-         if(!at_all && !at_at && !at_byword && at_cnt) //count
+        else if(!at_all && !at_at && !at_byword && at_cnt) //count
         {
              printf("%d\n", index_find);
         }
-         if(at_all && !at_at && at_byword && !at_cnt) // all and byword
+         else if(at_all && !at_at && at_byword && !at_cnt) // all and byword
         {
             for (int i = 0; found_word[i] != -1; i++)
             {
@@ -1160,7 +1232,7 @@ void find(char pattern[],char address[],int at_cnt,int at_at,int at_byword,int a
             }
             printf("\n");
         }
-         if(!at_all && at_at && at_byword && !at_cnt) //at and byword
+        else if(!at_all && at_at && at_byword && !at_cnt) //at and byword
         {
              if(at_at-1 < 0)
                 printf("-1\n");
@@ -1170,14 +1242,38 @@ void find(char pattern[],char address[],int at_cnt,int at_at,int at_byword,int a
         else{
             printf("non valid combination");
         }
-        fclose(myfile);
     }
     else{
         printf("This file doesn't exist !\n");
-        return;
+        return -1;
     }
+
 }
 
+void replacestr(char str[],char str2[],char address[],int at_at,int at_all)
+{
+    copy_for_undo(address);
+
+    if(at_all && at_at)
+        return;
+    if(!at_all && !at_at)
+    {
+        int index_found;
+
+        index_found = find(str,address,0,0,0,0);
+        printf("d");
+        remove_word(address,index_found);
+
+    }
+    if(at_at && !at_all)
+    {
+
+    }
+    if(at_all && !at_at)
+    {
+
+    }
+}
 void get_input()
 {
     // this function get the command and check if it is available
@@ -1772,6 +1868,183 @@ void get_input()
            }
            //printf("%s   %s",address1,address2);
            compare(address1,address2);
+        }
+    }
+    else if(!strcmp(command,"replace"))
+    {
+        if(!strcmp(sub_command,"--str1"))
+        {
+            char str[maxl],file[maxl];
+            int index_str = 0,index_file = 0;
+            char temp;
+            temp = getchar(); // space
+            temp = getchar(); //first char to check if it is " or not
+            if(temp == '"')
+            {
+                temp = getchar();
+                while(1)
+                {
+                    str[index_str] = temp;
+                    index_str++;
+                    temp = getchar();
+                    if(temp == '"' && str[index_str-1] != '\\')
+                    {
+                        break;
+                    }
+                    if(temp == '"' && str[index_str-1] == '\\')
+                    {
+                        index_str--;
+                    }
+                }
+                str[index_str] = '\0';
+                //printf("%s",str);
+                temp = getchar(); //space
+            }
+            else
+            {
+                str[index_str] = temp;
+                index_str++;
+                temp = getchar();
+                while(1)
+                {
+                    str[index_str] = temp;
+                    index_str++;
+                    temp = getchar();
+                    if(temp == ' ')
+                    {
+                        break;
+                    }
+                    if(temp == '"' && str[index_str-1] == '\\')
+                    {
+                        index_str--;
+                    }
+                }
+                str[index_str] = '\0';
+               // printf("%s",str);
+            }
+            scanf("%s",sub_command);
+            char str2[maxl];
+            index_str = 0;
+            temp = getchar(); // space
+            temp = getchar(); //first char to check if it is " or not
+            if(temp == '"')
+            {
+                temp = getchar();
+                while(1)
+                {
+                    str2[index_str] = temp;
+                    index_str++;
+                    temp = getchar();
+                    if(temp == '"' && str2[index_str-1] != '\\')
+                    {
+                        break;
+                    }
+                    if(temp == '"' && str2[index_str-1] == '\\')
+                    {
+                        index_str--;
+                    }
+                }
+                str2[index_str] = '\0';
+                //printf("%s",str);
+                temp = getchar(); //space
+            }
+            else
+            {
+                str2[index_str] = temp;
+                index_str++;
+                temp = getchar();
+                while(1)
+                {
+                    str2[index_str] = temp;
+                    index_str++;
+                    temp = getchar();
+                    if(temp == ' ')
+                    {
+                        break;
+                    }
+                    if(temp == '"' && str2[index_str-1] == '\\')
+                    {
+                        index_str--;
+                    }
+                }
+                str2[index_str] = '\0';
+               // printf("%s",str);
+            }
+            scanf("%s",sub_command);
+            if(!strcmp(sub_command,"--file"))
+            {
+                found = 1;
+                temp = getchar(); // space
+                temp = getchar();//first char to check if it is " or not for file address
+                if(temp == '"')
+                {
+                    temp = getchar();
+                    while(1)
+                    {
+                        file[index_file] = temp;
+                        index_file++;
+                        temp = getchar();
+                        if(temp == '"' && file[index_file-1] != '\\')
+                        {
+                            break;
+                        }
+                        if(temp == '"' && file[index_file-1] == '\\')
+                        {
+                            index_file--;
+                        }
+                    }
+                    file[index_file] = '\0';
+                    //printf("%s",file);
+                }
+                else{
+                    file[index_file] = temp;
+                    index_file++;
+                    temp = getchar();
+                    while(1)
+                    {
+                        file[index_file] = temp;
+                        index_file++;
+                        temp = getchar();
+                        if(temp == ' ')
+                        {
+                            break;
+                        }
+                        if(temp == '\n')
+                        {
+                            found = 1;
+                            break;
+                        }
+                        if(temp == '"' && file[index_file-1] == '\\')
+                        {
+                            index_file--;
+                        }
+                    }
+                    file[index_file] = '\0';
+                    //printf("%s",file);
+                }
+                char s[maxl];
+                scanf("%[^\n]%*c",s);
+                char *token;
+                const char c[2] = " ";
+                token = strtok(s,c);
+                int at_at = 0,at_all = 0;
+                while( token != NULL ) {
+                  if(!strcmp(token,"-at"))
+                  {
+                      at_at = 1;
+                  }
+                  else if(!strcmp(token,"-all"))
+                  {
+                      at_all = 1;
+                  }
+                  else
+                  {
+                      at_at = atoi(token);
+                  }
+                  token = strtok(NULL, c);
+               }
+                replacestr(str,str2,file,at_at,at_all);
+            }
         }
     }
     if(!found)
