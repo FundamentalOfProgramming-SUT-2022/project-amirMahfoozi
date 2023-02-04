@@ -16,6 +16,9 @@
 int MODE; //1 == insert // 2 ==normal // 3 == visual
 char text_box[1000][100] = {};
 char name[50] = "new text file";
+
+void copy_for_undo(char address[]);
+
 void clear_text_box()
 {
 	for(int i = 0;i<1000;i++)
@@ -125,6 +128,164 @@ int navigation(WINDOW* win,int t,int *line,int *pos)
 	}
 
 	return 0;
+}
+void auto_indent(char address[])
+{
+    copy_for_undo(address);
+    int n = strlen(address);
+    char filename[max_address];
+    for(int i = 1;i<n;i++)
+    {
+        filename[i-1] = address[i];
+    }
+    filename[n-1] = '\0';
+    // filename = address - '/'
+    FILE* myfile;
+    if(fopen(filename,"r")) // check if file is created
+    {
+        myfile = fopen(filename,"r");
+        FILE* temporary = fopen("temporary.txt","w");
+        char line[200];
+        int depth = 0;
+        char before;
+        int haveword = 0;
+        while(1)
+        {
+            haveword = 0;
+            line[0] = '\0';
+            if(fgets(line,200,myfile) == NULL) break;
+            int n = strlen(line);
+            for(int i = 0;i<n;i++)
+            {
+                if(line[i] == '{')
+                    {
+                        if(line[i-1] != ' ')
+                        {
+
+                        }
+                        else{
+                            int tempi = i-1;
+                            while(line[tempi] == ' ')
+                                {
+                                    line[tempi] = 126;
+                                    tempi--;
+                                }
+
+                        }
+                    }
+            }
+            for(int i = 0;i<depth*4;i++)
+            {
+                fputc(' ',temporary);
+                before = ' ';
+            }
+            int last = 0;
+            for(int i = 0;i<n;i++)
+            {
+                if(line[i] != ' ')
+                {
+                    last = i;
+                    break;
+                }
+            }
+            for(int i = last;i<n;i++)
+            {
+                if(line[i] == '{')
+                {
+                    depth++;
+                    if(haveword && before != ' ' && before != '\n')
+                        fputc(' ',temporary);
+                    fputc(line[i],temporary);
+                    if(line[i+1] != '\n')
+                    {
+                        fputc('\n',temporary);
+                        before = '\n';
+                        haveword = 0;
+                    }
+                    if(line[i+1] == '\n')
+                    {
+                        fputc('\n',temporary);
+                        before = '\n';
+                        haveword = 0;
+                        i++;
+                    }
+                    int temp = i+1;
+                    while(line[temp] != '}' && temp < n)
+                    {
+                        if(line[temp] != '}' && line[temp] != ' ' && line[temp] != '\n')
+                        {
+                            haveword = 1;
+                            break;
+                        }
+                        temp++;
+                    }
+                    if(haveword)
+                    {
+                        for(int j = 0;j<depth*4;j++)
+                        {
+                            fputc(' ',temporary);
+                            before = ' ';
+                        }
+                    }
+
+                    while(line[i+1] == ' ')
+                    {
+                        i++;
+                    }
+                }
+                else if(line[i] == '}')
+                {
+                    depth--;
+                    if(before != '\n' && haveword)
+                    {
+                        fputc('\n',temporary);
+                        before = '\n';
+                        haveword = 0;
+                    }
+                    for(int j = 0;j<depth*4;j++)
+                    {
+                        fputc(' ',temporary);
+                        before = ' ';
+                    }
+                    fputc(line[i],temporary);
+                    if(line[i+1] != '\n' && line[i+1] != '\0')
+                    {
+                        fputc('\n',temporary);
+                        before = '\n';
+                        haveword = 0;
+                    }
+                    while(line[i+1] == ' ')
+                    {
+                        i++;
+                    }
+                }
+                else if(line[i] != 126)
+                {
+                    if(line[i] != ' ')
+                        haveword = 1;
+                    fputc(line[i],temporary);
+                    before = line[i];
+                }
+            }
+        }
+
+        fclose(myfile);
+        fclose(temporary);
+        myfile = fopen(filename,"w");
+        temporary = fopen("temporary.txt","r");
+        while(1)
+        {
+            line[0] = '\0';
+            if(fgets(line,200,temporary) == NULL) break;
+            fprintf(myfile,"%s",line);
+        }
+        fclose(myfile);
+        fclose(temporary);
+    }
+    else{
+        printf("This file doesn't exist !\n");
+        return;
+    }
 }
 
 void open(WINDOW *win,WINDOW *win_mode,char address[])
@@ -521,8 +682,6 @@ wclear(input);
 		strcpy(name,filename);
 		open(text,mode_win,filename);
 		wrefresh(text);
-		clear_name();
-		strcpy(name,"new text file");
 
 	
 	wclear(input);
@@ -707,6 +866,10 @@ int main()
                 wrefresh(mode_win);
 
 			undo(filename);
+		}
+		else if(temp == '=')
+		{
+			auto_indent(name);
 		}
 	}	
 	endwin();
