@@ -48,7 +48,7 @@ int navigation(WINDOW* win,int t,int *line,int *pos)
 	if(t == KEY_RIGHT)
 	{
 		noecho();
-		if( text_box[*line][*pos+1] == '\n')
+		if( text_box[*line-1][*pos+1-2] == '\n')
 		{
 			;
 		}
@@ -65,7 +65,7 @@ int navigation(WINDOW* win,int t,int *line,int *pos)
 	if(t == KEY_LEFT)
         {
 		noecho();
-                if(*pos-1 < 0 || text_box[*line][*pos-1] == '\0' || text_box[*line][*pos-1] == '\n')
+                if(*pos-1 < 2 || text_box[*line-1][*pos-1-2] == '\0' || text_box[*line-1][*pos-1-2] == '\n')
                 {
                         ;
                 }
@@ -89,9 +89,14 @@ int navigation(WINDOW* win,int t,int *line,int *pos)
                         ;
                 }
                 else{
+			while(text_box[y-1-1][x-2] == '\0')
+			{
+				x--;	
+			}
                         wmove(win,y-1,x);
                         wrefresh(win);
                         *line--;
+			*pos = x;
                 }
                 echo();
                 return 1;
@@ -108,9 +113,14 @@ int navigation(WINDOW* win,int t,int *line,int *pos)
 		}
 		else
 		{
+			while(text_box[y+1-1][x-2] == '\0')
+			{
+				x--;
+			}
 			wmove(win,y+1,x);
 			wrefresh(win);
 			*line++;
+			*pos = x;
 		}
 	}
 
@@ -434,6 +444,8 @@ void normal_mode()
                 createfile(filename);
                 copy_from_new_to_file(filename);
 		}
+		wclear(input);
+		box(input,0,0);
 		wclear(mode_win);
 		box(mode_win,0,0);
 		wattron(mode_win,COLOR_PAIR(2));
@@ -442,7 +454,7 @@ void normal_mode()
 		wrefresh(mode_win);
         wattroff(mode_win,A_BOLD);
         wattroff(mode_win,COLOR_PAIR(2));
-		wrefresh(mode_win);
+		wrefresh(input);
 	}
 	else if(!strcmp(command,"open"))
 	{
