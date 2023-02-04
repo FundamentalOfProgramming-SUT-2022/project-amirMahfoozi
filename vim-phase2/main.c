@@ -30,6 +30,15 @@ void clear_name()
                 name[i] = 0;
         }
 }
+void number_win(WINDOW *win)
+{
+	int ymax,xmax;
+	getmaxyx(win,ymax,xmax);
+	for(int i = 1;i<ymax-1;i++)
+	{
+		mvwprintw(win,i,0,"%d",i);
+	}
+}
 int navigation(WINDOW* win,char temp,int *index)
 {
 	if(temp == KEY_RIGHT)
@@ -64,6 +73,7 @@ void open(WINDOW *win,WINDOW *win_mode,char address[])
 {
     wclear(win_mode);
     box(win_mode,0,0);
+    number_win(win);
     wattron(win_mode,COLOR_PAIR(1));
         wattron(win_mode,A_BOLD);
 
@@ -93,7 +103,7 @@ void open(WINDOW *win,WINDOW *win_mode,char address[])
 		if(cnt_line == ymax-1) break;
             line[0] = '\0';
             if(fgets(line,200,myfile) == NULL) break;
-            mvwprintw(win,cnt_line,1,"%s",line);
+            mvwprintw(win,cnt_line,2,"%s",line);
 	    cnt_line++;
         }
         fclose(myfile);
@@ -337,6 +347,7 @@ void normal_mode()
         //create a window for text
         WINDOW *text = newwin(y_max-6,x_max,0,0);
         box(text,0,0);
+	number_win(text);
         refresh();
         wrefresh(text);
 
@@ -428,6 +439,7 @@ void insert_mode()
         //create a window for text
         WINDOW *text = newwin(y_max-6,x_max,0,0);
         box(text,0,0);
+	number_win(text);
         refresh();
         wrefresh(text);
 
@@ -441,7 +453,7 @@ void insert_mode()
         wattroff(mode_win,COLOR_PAIR(1));
 	char ch;
 	int line = 1;
-	int pos = 1;
+	int pos = 2;
 	keypad(text,true);
 	ch = mvwgetch(text,line,pos);
 	int index = 0;
@@ -452,7 +464,7 @@ void insert_mode()
 		if(ch == '\n')
 		{
 			line++;
-			pos = 1;
+			pos = 2;
 		}
 		else
 		{
@@ -492,6 +504,7 @@ int main()
         //create a window for text
         WINDOW *text = newwin(y_max-6,x_max,0,0);
         box(text,0,0);
+	number_win(text);
         refresh();
         wrefresh(text);
 
