@@ -1,0 +1,3 @@
+sm 
+ man salam 
+ man omadam \nomadam \n

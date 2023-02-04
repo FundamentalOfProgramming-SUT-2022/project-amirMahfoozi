@@ -727,7 +727,8 @@ void auto_indent(char address[])
                 if(line[i] == '{')
                 {
                     depth++;
-                    fputc(' ',temporary);
+                    if(haveword && before != ' ' && before != '\n')
+                        fputc(' ',temporary);
                     fputc(line[i],temporary);
                     if(line[i+1] != '\n')
                     {
@@ -1060,7 +1061,7 @@ int is_match(char str[], char pattern[]) // can handle *a and a* and a*b
             // Two cases if we see a '*'
             // ‘*’ indicates an empty sequence
             // '*' character matches with ith character in input
-            if (pattern[j - 1] == '*')
+            if (pattern[j - 1] == '*' && str[j-1] != ' ')
                 dp[i][j] = dp[i][j - 1] || dp[i - 1][j];
             //characters actually match
             else if (str[i - 1] == pattern[j - 1])
@@ -1094,7 +1095,7 @@ int find(char pattern[],char address[],int at_cnt,int at_at,int at_byword,int at
         myfile = fopen(filename,"r");
         char line[200];
         int space[100],found[100],found_word[100];
-        int flag=0,index_find = 0,index_space = 0,chert = 0;
+        int flag=0,index_find = 0,index_space = 0;
         for (int i = 0; i < 100; i++)
         {
             space[i] = -1;
@@ -1126,14 +1127,14 @@ int find(char pattern[],char address[],int at_cnt,int at_at,int at_byword,int at
                 }
                 pattern[len - 1] = '\0';
                 pattern[len - 2] = '\0';
-                chert++;
+                //printf("%s",pattern);
             }
         }
         for (int i = 0; i <= len ; i++)
         {
             char temp[200] = {};
-            strncpy(temp, line+i, strlen(pattern)-chert);
-
+            strncpy(temp, line+i, strlen(pattern));
+            //printf("%s/",temp);
             if (line[i] == ' ')
             {
                 space[index_space] = i;
@@ -1155,7 +1156,7 @@ int find(char pattern[],char address[],int at_cnt,int at_at,int at_byword,int at
             }
             else
             {
-                if (strcmp(pattern, temp) == 0)
+                if (!strcmp(pattern, temp))
                 {
                     flag++;
                     to_khat_peida_shod = 1;
@@ -1184,6 +1185,11 @@ int find(char pattern[],char address[],int at_cnt,int at_at,int at_byword,int at
         fclose(myfile);
         if(!at_all && !at_at && !at_byword && !at_cnt) // no option
         {
+            if(found[0] == -1)
+            {
+                printf("not found\n");
+                return -1;
+            }
             printf("%d\n", found[0]);
             int ans = found[0];
             return 0;
@@ -1192,6 +1198,11 @@ int find(char pattern[],char address[],int at_cnt,int at_at,int at_byword,int at
         else if(at_all && !at_at && !at_byword && !at_cnt) // all
         {
             int where = index_to_be_replaced;
+             if(found[0] == -1)
+            {
+                printf("not found\n");
+                return -1;
+            }
             for (int i = 0; found[i] != -1; i++)
             {
                 printf("%d ", found[i]);
@@ -1205,7 +1216,7 @@ int find(char pattern[],char address[],int at_cnt,int at_at,int at_byword,int at
         {
             if(at_at-1 < 0)
             {
-                printf("-1\n");
+                printf("not found\n");
                 return -1;
             }
 
@@ -1218,14 +1229,26 @@ int find(char pattern[],char address[],int at_cnt,int at_at,int at_byword,int at
         }
          else if(!at_all && !at_at && at_byword && !at_cnt) // byword
         {
+             if(found_word[0] == -1)
+            {
+                printf("not found\n");
+                return -1;
+            }
+            printf("%d\n",found_word[0]);
             return found_word[0];
         }
         else if(!at_all && !at_at && !at_byword && at_cnt) //count
         {
              printf("%d\n", index_find);
+             return index_find;
         }
          else if(at_all && !at_at && at_byword && !at_cnt) // all and byword
         {
+             if(found_word[0] == -1)
+            {
+                printf("not found\n");
+                return -1;
+            }
             for (int i = 0; found_word[i] != -1; i++)
             {
                 printf("%d ", found_word[i]);
@@ -1235,7 +1258,7 @@ int find(char pattern[],char address[],int at_cnt,int at_at,int at_byword,int at
         else if(!at_all && at_at && at_byword && !at_cnt) //at and byword
         {
              if(at_at-1 < 0)
-                printf("-1\n");
+                 printf("not found\n");
             else
                 printf("%d\n", found_word[at_at-1]);
         }
@@ -1255,23 +1278,38 @@ void replacestr(char str[],char str2[],char address[],int at_at,int at_all)
     copy_for_undo(address);
 
     if(at_all && at_at)
+    {
+        printf("not valid combination\n");
         return;
+    }
+
     if(!at_all && !at_at)
     {
         int index_found;
-
         index_found = find(str,address,0,0,0,0);
-        printf("d");
-        remove_word(address,index_found);
-
+        int sizee = strlen(str);
+        removestr(address,1,index_found,sizee,'f');
+        insertstr(address,1,index_found,str2);
     }
     if(at_at && !at_all)
     {
-
+        int index_found;
+        index_found = find(str,address,0,at_at,0,0);
+        int sizee = strlen(str);
+        removestr(address,1,index_found,sizee,'f');
+        insertstr(address,1,index_found,str2);
     }
     if(at_all && !at_at)
     {
-
+        int cnt = find(str,address,1,0,0,0);
+        for(int i = 1;i<=cnt;i++)
+        {
+            int index_found;
+            index_found = find(str,address,0,1,0,0);
+            int sizee = strlen(str);
+            removestr(address,1,index_found,sizee,'f');
+            insertstr(address,1,index_found,str2);
+        }
     }
 }
 void get_input()
@@ -1513,7 +1551,7 @@ void get_input()
             else
             {
                 int cnt = 0;
-                while(temp!='\n')
+                while(temp!=' ')
                 {
                     address[cnt] = temp;
                     temp = getchar();
