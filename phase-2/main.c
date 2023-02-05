@@ -16,7 +16,8 @@
 int MODE; //1 == insert // 2 ==normal // 3 == visual
 char text_box[1000][100] = {};
 char name[50] = "new text file";
-
+int to_be_replaced[maxl] = {-2};
+int index_to_be_replaced = 0;
 void copy_for_undo(char address[]);
 
 void clear_text_box()
@@ -290,6 +291,7 @@ void auto_indent(char address[])
 
 void open(WINDOW *win,WINDOW *win_mode,char address[])
 {
+	clear_text_box();
     wclear(win_mode);
     box(win_mode,0,0);
     number_win(win);
@@ -317,12 +319,14 @@ void open(WINDOW *win,WINDOW *win_mode,char address[])
 	int cnt_line = 1;
 	int ymax,xmax;
 	getmaxyx(win,ymax,xmax);
+	int cnt = 0;
         while(1)
         {
 		if(cnt_line == ymax-1) break;
             line[0] = '\0';
             if(fgets(line,200,myfile) == NULL) break;
             mvwprintw(win,cnt_line,2,"%s",line);
+		strcpy(text_box[cnt],line);
 	    cnt_line++;
         }
         fclose(myfile);
@@ -546,6 +550,385 @@ void createfile(char address[])
     }
 }
 
+void pastestr(char address[],int l,int p)
+{
+    copy_for_undo(address);
+    int n = strlen(address);
+    char text[maxl*200];
+    FILE* clipboard = fopen("clipboard.txt","r");
+    char line[200];
+    int number_of_chars = 0;
+    while(1)
+    {
+        line[0] = '\0';
+        if(fgets(line,200,clipboard) == NULL) break;
+        int len = strlen(line);
+        for(int i = 0;i<len;i++)
+        {
+            text[number_of_chars] = line[i];
+            number_of_chars++;
+        }
+    }
+    fclose(clipboard);
+    insertstr(address,l,p,text);
+}
+
+int is_match(char str[], char pattern[]) // can handle *a and a* and a*b
+{
+    int n = strlen(str);
+    int m = strlen(pattern);
+    //both empty is true (base case)
+    if (m == 0)
+        return (n == 0);
+    // we use dp method to find
+    int dp[n + 1][m + 1];
+    memset(dp, 0, sizeof(dp));
+    dp[0][0] = 1;// empty pattern and empty string
+
+    // Only '*' can match with empty string
+    for (int j = 1; j <= m; j++)
+    {
+        if (pattern[j - 1] == '*')
+            dp[0][j] = dp[0][j - 1];
+    }
+    for (int i = 1; i <= n; i++)
+    {
+        for (int j = 1; j <= m; j++)
+        {
+            // Two cases if we see a '*'
+            // ‘*’ indicates an empty sequence
+            // '*' character matches with ith character in input
+            if (pattern[j - 1] == '*' && str[j-1] != ' ')
+                dp[i][j] = dp[i][j - 1] || dp[i - 1][j];
+            //characters actually match
+            else if (str[i - 1] == pattern[j - 1])
+                dp[i][j] = dp[i - 1][j - 1];
+
+            // If characters don't match
+            else
+                dp[i][j] = 0;
+        }
+    }
+
+    return dp[n][m];
+}
+
+int find(char pattern[],char address[],int at_cnt,int at_at,int at_byword,int at_all)
+{
+
+    int n = strlen(address);
+    char filename[max_address];
+    for(int i = 1;i<n;i++)
+    {
+        filename[i-1] = address[i];
+    }
+    filename[n-1] = '\0';
+    // filename = address - '/'
+    FILE* myfile;
+    int untilnow = 0;
+    if(fopen(filename,"r")) // check if file is created
+    {
+
+        myfile = fopen(filename,"r");
+        char line[200];
+        int space[100],found[100],found_word[100];
+        int flag=0,index_find = 0,index_space = 0;
+        for (int i = 0; i < 100; i++)
+        {
+            space[i] = -1;
+            found[i] = -1;
+            found_word[i] = -1;
+        }
+        while(1)
+        {
+            int to_khat_peida_shod = 0;
+        if(fgets(line,200,myfile) == NULL)
+            break;
+        int len = strlen(line) - strlen(pattern);
+        int wild = 0;
+        if (pattern[0] == '*')
+        {
+            wild = 1;
+        }
+        for (int i = 1; i < len - 1; i++)
+        {
+            if (pattern[i] == '*' && pattern[i - 1] != '\\')
+            {
+                wild = 1;
+            }
+            if (pattern[i] == '*' && pattern[i - 1] == '\\') // \*
+            {
+                for (int j = i - 1; j < len; j++)
+                {
+                    pattern[j] = pattern[j + 1];
+                }
+                pattern[len - 1] = '\0';
+                pattern[len - 2] = '\0';
+                //printf("%s",pattern);
+            }
+        }
+        for (int i = 0; i <= len ; i++)
+        {
+            char temp[200] = {};
+            strncpy(temp, line+i, strlen(pattern));
+            //printf("%s/",temp);
+            if (line[i] == ' ')
+            {
+                space[index_space] = i;
+                index_space++;
+                flag = 0;
+            }
+            if(wild)
+            {
+                if (is_match(temp,pattern))
+                {
+                    flag++;
+                    if (flag == 1)
+                    {
+                        to_khat_peida_shod = 1;
+                        found[index_find] = i+untilnow;
+                        index_find++;
+                    }
+                }
+            }
+            else
+            {
+                if (!strcmp(pattern, temp))
+                {
+                    flag++;
+                    to_khat_peida_shod = 1;
+                    found[index_find] = i+untilnow;
+                    index_find++;
+                }
+            }
+        }
+        if(to_khat_peida_shod)
+        {
+            for (int i = 0; found[i] != -1; i++)
+            {
+                int word = 1;
+                for (int j = 0; space[j] != -1; j++)
+                {
+                    if (space[j] < found[i])
+                    {
+                        word = j + 2;
+                    }
+                }
+                found_word[i] = word;
+            }
+        }
+        untilnow+=strlen(line)-2;
+        }
+        fclose(myfile);
+        if(!at_all && !at_at && !at_byword && !at_cnt) // no option
+        {
+            if(found[0] == -1)
+            {
+                printf("not found\n");
+                return -1;
+            }
+            printf("%d\n", found[0]);
+            int ans = found[0];
+            return 0;
+
+        }
+        else if(at_all && !at_at && !at_byword && !at_cnt) // all
+        {
+            int where = index_to_be_replaced;
+             if(found[0] == -1)
+            {
+                printf("not found\n");
+                return -1;
+            }
+            for (int i = 0; found[i] != -1; i++)
+            {
+                printf("%d ", found[i]);
+                to_be_replaced[index_to_be_replaced] = found[i];
+                index_to_be_replaced++;
+            }
+            printf("\n");
+            return where;
+        }
+        else if(!at_all && at_at && !at_byword && !at_cnt) // at
+        {
+            if(at_at-1 < 0)
+            {
+                printf("not found\n");
+                return -1;
+            }
+
+            else
+            {
+                printf("%d\n", found[at_at-1]);
+                return found[at_at-1];
+            }
+
+        }
+         else if(!at_all && !at_at && at_byword && !at_cnt) // byword
+        {
+             if(found_word[0] == -1)
+            {
+                printf("not found\n");
+                return -1;
+            }
+            printf("%d\n",found_word[0]);
+            return found_word[0];
+        }
+        else if(!at_all && !at_at && !at_byword && at_cnt) //count
+        {
+             printf("%d\n", index_find);
+             return index_find;
+        }
+         else if(at_all && !at_at && at_byword && !at_cnt) // all and byword
+        {
+             if(found_word[0] == -1)
+            {
+                printf("not found\n");
+                return -1;
+            }
+            for (int i = 0; found_word[i] != -1; i++)
+            {
+                printf("%d ", found_word[i]);
+            }
+            printf("\n");
+        }
+        else if(!at_all && at_at && at_byword && !at_cnt) //at and byword
+        {
+             if(at_at-1 < 0)
+                 printf("not found\n");
+            else
+                printf("%d\n", found_word[at_at-1]);
+        }
+        else{
+            printf("non valid combination");
+        }
+    }
+    else{
+        printf("This file doesn't exist !\n");
+        return -1;
+    }
+
+}
+
+void removestr(char address[],int l,int p,int size,char flag)
+{
+    copy_for_undo(address);
+    int n = strlen(address);
+    char filename[max_address];
+    for(int i = 1;i<n;i++)
+    {
+        filename[i-1] = address[i];
+    }
+    filename[n-1] = '\0';
+    // filename = address - '/'
+    FILE* myfile;
+    if(fopen(filename,"r")) // check if file is created
+    {
+        char wholetext[maxl*200];
+        int countchar = 0;
+        long long posi = 0; // position of the first char to be removed
+        myfile = fopen(filename,"r");
+        int number_of_line = 1;
+        char line[200];
+        while(1)
+        {
+            line[0] = '\0';
+            if(fgets(line,200,myfile) == NULL) break;
+            int len = strlen(line);
+            if(number_of_line < l)
+                posi+=len;
+            number_of_line++;
+            for(int i = 0;i<len;i++)
+            {
+                wholetext[countchar] = line[i];
+                countchar++;
+            }
+        }
+        posi+=p;
+        FILE* temporary = fopen("temporary.txt","w");
+        if(flag == 'b')
+        {
+             for(int i = 0;i<countchar;i++)
+            {
+                if(i<posi && i>posi-size-1)
+                {
+                    ;
+                }
+                else
+                    fprintf(temporary,"%c",wholetext[i]);
+            }
+        }
+        else if(flag == 'f')
+        {
+            for(int i = 0;i<countchar;i++)
+            {
+                if(i>=posi && i<posi+size)
+                {
+                    ;
+                }
+                else
+                    fprintf(temporary,"%c",wholetext[i]);
+            }
+        }
+        fclose(myfile);
+        fclose(temporary);
+        temporary = fopen("temporary.txt","r");
+            myfile = fopen(filename,"w");
+            while(1)
+            {
+                line[0] = '\0';
+                if(fgets(line,200,temporary) == NULL) break;
+                fprintf(myfile,"%s",line);
+            }
+            fclose(myfile);
+            fclose(temporary);
+    }
+    else
+    {
+        printf("This file doesn't exist !\n");
+        return;
+    }
+}
+
+void replacestr(char str[],char str2[],char address[],int at_at,int at_all)
+{
+    copy_for_undo(address);
+
+    if(at_all && at_at)
+    {
+        printf("not valid combination\n");
+        return;
+    }
+
+    if(!at_all && !at_at)
+    {
+        int index_found;
+        index_found = find(str,address,0,0,0,0);
+        int sizee = strlen(str);
+        removestr(address,1,index_found,sizee,'f');
+        insertstr(address,1,index_found,str2);
+    }
+    if(at_at && !at_all)
+    {
+        int index_found;
+        index_found = find(str,address,0,at_at,0,0);
+        int sizee = strlen(str);
+        removestr(address,1,index_found,sizee,'f');
+        insertstr(address,1,index_found,str2);
+    }
+    if(at_all && !at_at)
+    {
+        int cnt = find(str,address,1,0,0,0);
+        for(int i = 1;i<=cnt;i++)
+        {
+            int index_found;
+            index_found = find(str,address,0,1,0,0);
+            int sizee = strlen(str);
+            removestr(address,1,index_found,sizee,'f');
+            insertstr(address,1,index_found,str2);
+        }
+    }
+}
 void normal_mode()
 {
 	echo();
@@ -742,7 +1125,7 @@ void insert_mode()
 	number_win(text);
         refresh();
         wrefresh(text);
-
+				
 	 MODE = 1;
         wattron(mode_win,COLOR_PAIR(1));
         wattron(mode_win,A_BOLD);
@@ -790,6 +1173,101 @@ void insert_mode()
         box(input,0,0);
         wrefresh(input);
 }
+void visual_mode()
+{
+	echo();
+        start_color();
+        init_pair(1,COLOR_BLUE,COLOR_WHITE);
+        init_pair(2,COLOR_MAGENTA,COLOR_BLACK);
+        int y_max = 20,x_max = 100;
+        getmaxyx(stdscr,y_max,x_max);
+        //create a window for input
+        WINDOW *input = newwin(3,x_max,y_max-3,0);
+        box(input,0,0);
+        refresh();
+        wrefresh(input);
+        //create a window for mode
+        WINDOW *mode_win = newwin(3,x_max,y_max-6,0);
+        box(mode_win,0,0);
+        refresh();
+        wrefresh(mode_win);
+        //create a window for text
+        WINDOW *text = newwin(y_max-6,x_max,0,0);
+        box(text,0,0);
+        number_win(text);
+        refresh();
+        wrefresh(text);
+
+	 MODE = 3;
+        wattron(mode_win,COLOR_PAIR(1));
+        wattron(mode_win,A_BOLD);
+        mvwprintw(mode_win,1,1,"VISUAL   ");
+        wprintw(mode_win,"%s +",name);
+        wrefresh(mode_win);
+        wattroff(mode_win,A_BOLD);
+        wattroff(mode_win,COLOR_PAIR(1));
+	
+	int n = strlen(name);
+    char filename[max_address];
+    for(int i = 1;i<n;i++)
+    {
+        filename[i-1] = name[i];
+    }
+    filename[n-1] = '\0';
+    // filename = address - '/'
+    FILE* myfile;
+    if(fopen(filename,"r")) // check if file is created
+    {
+        myfile = fopen(filename,"r");
+        char line[200];
+        int cnt_line = 1;
+        int ymax,xmax;
+        getmaxyx(text,ymax,xmax);
+        int cnt = 0;
+        while(1)
+        {
+                if(cnt_line == ymax-1) break;
+            line[0] = '\0';
+            if(fgets(line,200,myfile) == NULL) break;
+            mvwprintw(text,cnt_line,2,"%s",line);
+                strcpy(text_box[cnt],line);
+            cnt_line++;
+        }
+        fclose(myfile);
+	}
+    	wrefresh(text);
+	int firsty,firstx;
+	int ch;
+	ch = wgetch(text);
+	int line = 1, pos = 2;
+	while(ch != 27)
+        {
+		if(ch == (int)'s')
+		{
+			getyx(text,firsty,firstx);
+		}
+                if(navigation(text,ch,&line,&pos))
+                {
+                        ;
+                }
+                ch = wgetch(text);
+        }
+	int lasty,lastx;
+	getyx(text,lasty,lastx);
+	firsty--;
+	lasty--;
+	firstx-=2;
+	lastx-=2;
+	FILE* clipboard = fopen("clipboard.txt","w");
+	for(int i = firsty;i<=lasty;i++)
+	{
+		for(int j = firstx;j<=lastx;j++)
+		{
+			fprintf(clipboard,"%c",text_box[i][j]);
+		}
+	}
+	fclose(clipboard);
+}
 int main()
 {
 	initscr();
@@ -831,7 +1309,7 @@ int main()
 		}
 		else if(temp == 'v')
 		{
-		 
+		 visual_mode();
 		}
 		else if(temp == ':')
 		{
